@@ -1,0 +1,108 @@
+/*
+ * Odr design tokens — clean neutral (one accent, hairline borders).
+ *
+ * Every color is declared once with `light-dark()`; the active theme is
+ * chosen by `color-scheme`. `:root` says `light dark`, so with no explicit
+ * choice the OS preference wins. `[data-theme]` on <html> overrides it.
+ *
+ * ponytail: light-dark() instead of duplicating the whole token block under
+ * a [data-theme="dark"] selector *and* a prefers-color-scheme media query.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ── surfaces — warm cream in light, warm charcoal in dark ──────── */
+  --bg-canvas:      light-dark(oklch(97%   0.011 85), oklch(15%   0.008 60));
+  --bg-surface:     light-dark(oklch(99.5% 0.004 90), oklch(18%   0.009 60));
+  --bg-surface-2:   light-dark(oklch(95.5% 0.012 85), oklch(21.5% 0.010 60));
+  --bg-surface-3:   light-dark(oklch(92.5% 0.014 85), oklch(26.5% 0.010 60));
+  --bg-overlay:     light-dark(oklch(20% 0.012 60 / 0.35), oklch(0% 0 0 / 0.6));
+
+  /* Receipts are paper in either theme — that is the point of a receipt. */
+  --bg-receipt:     oklch(98% 0.004 90);
+  --bg-receipt-ink: oklch(24% 0.010 60);
+
+  /* ── text — warm near-browns instead of blue-grays ──────────────── */
+  --fg-primary:     light-dark(oklch(23% 0.012 60), oklch(96.5% 0.006 85));
+  --fg-secondary:   light-dark(oklch(39% 0.012 60), oklch(84% 0.008 85));
+  --fg-tertiary:    light-dark(oklch(51% 0.012 60), oklch(69% 0.010 80));
+  --fg-muted:       light-dark(oklch(60% 0.012 65), oklch(57% 0.010 75));
+  --fg-on-accent:   oklch(100% 0 0);
+
+  /* ── hairlines ───────────────────────────────────────────────────── */
+  --line-subtle:    light-dark(oklch(93%   0.010 85), oklch(22% 0.009 60));
+  --line-default:   light-dark(oklch(89%   0.012 85), oklch(27% 0.010 60));
+  --line-strong:    light-dark(oklch(81%   0.014 80), oklch(36% 0.012 65));
+  --line-receipt:   oklch(24% 0.010 60 / 0.25);
+
+  /* ── accent (brand green #40D39A, darkened for readable white text) ─ */
+  --accent:         light-dark(oklch(50% 0.130 163), oklch(60% 0.135 163));
+  --accent-hover:   light-dark(oklch(45% 0.135 163), oklch(66% 0.125 163));
+  --accent-pressed: light-dark(oklch(41% 0.130 163), oklch(54% 0.135 163));
+  --accent-soft:    color-mix(in oklab, var(--accent) 12%, transparent);
+
+  /* ── status (distinct hue + luminance, tuned per theme) ──────────── */
+  --status-open:       var(--fg-muted);
+  --status-firing:     light-dark(oklch(58% 0.130  70), oklch(80% 0.140  80));
+  /* fired keeps its own blue so it never blurs into settled-green or the accent */
+  --status-fired:      light-dark(oklch(52% 0.190 265), oklch(62% 0.170 265));
+  --status-settled:    light-dark(oklch(52% 0.140 150), oklch(74% 0.150 150));
+  --status-voided:     light-dark(oklch(53% 0.200  25), oklch(70% 0.170  25));
+  --status-aggregator: light-dark(oklch(50% 0.130 240), oklch(73% 0.120 240));
+  --status-offline:    var(--status-voided);
+
+  /* ── focus ring ──────────────────────────────────────────────────── */
+  --ring:           color-mix(in oklab, var(--accent) 55%, transparent);
+
+  /* ── radii — soft, app-like ──────────────────────────────────────── */
+  --radius-1: 5px;
+  --radius-2: 8px;
+  --radius-3: 10px;
+  --radius-4: 16px;
+  --radius-pill: 9999px;
+
+  /* ── elevation — barely there, warm-tinted ───────────────────────── */
+  --shadow-1: 0 1px 2px light-dark(rgb(35 28 15 / 0.05), rgb(0 0 0 / 0.35));
+  --shadow-2: 0 1px 3px light-dark(rgb(35 28 15 / 0.07), rgb(0 0 0 / 0.45));
+  --shadow-3: 0 12px 32px -12px light-dark(rgb(35 28 15 / 0.18), rgb(0 0 0 / 0.60));
+  --shadow-receipt:
+    0 18px 40px -20px light-dark(rgb(35 28 15 / 0.24), rgb(0 0 0 / 0.60)),
+    0 0 0 1px var(--line-default);
+
+  /* ── motion ──────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-instant: 80ms;
+  --dur-quick:   140ms;
+  --dur-base:    220ms;
+  --dur-slow:    360ms;
+
+  /* ── type stacks — one sans, mono for numbers ────────────────────── */
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── spacing rhythm — base 4 ─────────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── type scale ──────────────────────────────────────────────────── */
+  --text-xs:   12px;
+  --text-sm:   13px;
+  --text-base: 15px;
+  --text-md:   16px;
+  --text-lg:   18px;
+  --text-xl:   22px;
+  --text-2xl:  28px;
+  --text-3xl:  34px;
+}
+
+[data-theme="light"] { color-scheme: light; }
+[data-theme="dark"]  { color-scheme: dark; }

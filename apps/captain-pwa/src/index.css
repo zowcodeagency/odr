@@ -1,0 +1,337 @@
+/*
+ * Captain PWA stylesheet entry.
+ *
+ * Order is load-bearing:
+ *   1. Tokens (CSS vars from @odr/ui).
+ *   2. Tailwind itself — must own the file that does this so its content
+ *      scanner picks up our @source directives.
+ *   3. Base (resets + typography from @odr/ui).
+ *   4. @source — point Tailwind at every place we use utilities.
+ *   5. @theme — registers the semantic tokens as Tailwind utilities.
+ */
+
+@import "@odr/ui/tokens";
+@import "tailwindcss";
+@import "@odr/ui/base";
+@import "@odr/ui/theme";
+
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source "./**/*.{ts,tsx}";
+
+/*
+ * Touch floor. The base scale is 15px, so Tailwind's h-11 lands at 41px —
+ * under the 44px thumb target. One rule instead of px sizes scattered
+ * across every control, and only where fingers are actually used.
+ */
+@media (pointer: coarse), (max-width: 767px) {
+  button,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    /* 16px minimum stops iOS Safari auto-zooming the focused field. */
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Owner branding: optional heading accent set by lib/branding.ts. */
+h1,
+h2,
+h3 {
+  color: var(--brand-heading, inherit);
+}
+
+/*
+ * Owner branding: style variants, keyed off data-style on <html>
+ * (set by lib/branding.ts). Classic is the absence of the attribute.
+ * Pure token overrides plus a couple of attribute-selector hooks on the
+ * Tailwind arbitrary classes the app already uses — no markup changes.
+ */
+
+/* Gradient — primary buttons and the canvas get a color sweep. */
+[data-style="gradient"] [class*="bg-[var(--accent)]"] {
+  background-image: linear-gradient(
+    135deg,
+    var(--accent),
+    oklch(from var(--accent) calc(l + 0.08) calc(c * 1.1) calc(h - 40))
+  );
+}
+[data-style="gradient"] body {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--accent) 7%, var(--bg-canvas)),
+    var(--bg-canvas) 40%
+  );
+  background-attachment: fixed;
+}
+
+/* Soft — rounder, gentler. */
+[data-style="soft"] {
+  --radius-1: 10px;
+  --radius-2: 14px;
+  --radius-3: 20px;
+  --radius-4: 26px;
+  --shadow-1: 0 2px 10px light-dark(rgb(35 28 15 / 0.07), rgb(0 0 0 / 0.4));
+  --shadow-2: 0 4px 18px light-dark(rgb(35 28 15 / 0.09), rgb(0 0 0 / 0.5));
+}
+
+/* Sharp — square and flat. */
+[data-style="sharp"] {
+  --radius-1: 0px;
+  --radius-2: 2px;
+  --radius-3: 3px;
+  --radius-4: 4px;
+  --shadow-1: none;
+  --shadow-2: none;
+  --shadow-3: 0 0 0 1px var(--line-strong);
+}
+
+/* Glass — frosted cards over a soft color wash. */
+[data-style="glass"] {
+  --bg-surface: light-dark(rgb(255 255 253 / 0.62), rgb(34 32 28 / 0.55));
+  --radius-2: 12px;
+  --radius-3: 16px;
+}
+[data-style="glass"] body {
+  background-image:
+    radial-gradient(55% 38% at 12% 0%, color-mix(in oklab, var(--accent) 16%, transparent), transparent),
+    radial-gradient(45% 32% at 95% 8%, color-mix(in oklab, var(--accent) 9%, transparent), transparent);
+  background-attachment: fixed;
+}
+[data-style="glass"] [class*="bg-[var(--bg-surface)]"] {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* One live order moving from the table to the pass. */
+.login-service-loop {
+  width: 100%;
+  max-width: 620px;
+  margin-inline: auto;
+}
+
+.login-service-loop__canvas {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.login-service-loop__card {
+  fill: color-mix(in oklab, var(--bg-surface) 92%, transparent);
+  stroke: var(--line-default);
+  filter: url("#service-card-shadow");
+}
+
+.login-service-loop__device {
+  fill: var(--bg-surface-3);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+
+.login-service-loop__paper {
+  fill: var(--bg-receipt);
+  stroke: var(--line-default);
+}
+
+.login-service-loop__ink,
+.login-service-loop__muted,
+.login-service-loop__accent-stroke,
+.login-service-loop__steam,
+.login-service-loop__bag-line {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.login-service-loop__ink {
+  stroke: var(--fg-primary);
+  stroke-width: 2.5;
+}
+
+.login-service-loop__muted {
+  stroke: var(--fg-muted);
+  stroke-width: 2;
+}
+
+.login-service-loop__accent-fill,
+.login-service-loop__ticker-dot,
+.login-service-loop__runner {
+  fill: var(--accent);
+}
+
+.login-service-loop__accent-stroke {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+.login-service-loop__food {
+  fill: #f1c75b;
+  stroke: color-mix(in oklab, #f1c75b 60%, var(--fg-primary));
+}
+
+.login-service-loop__bag-line {
+  stroke: var(--bg-canvas);
+  stroke-width: 2;
+}
+
+.login-service-loop__eyebrow,
+.login-service-loop__label,
+.login-service-loop__ticker-copy {
+  font-family: var(--font-mono);
+}
+
+.login-service-loop__eyebrow {
+  fill: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.login-service-loop__title {
+  fill: var(--fg-primary);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.login-service-loop__label {
+  fill: var(--fg-secondary);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.login-service-loop__ticker-copy {
+  fill: var(--fg-muted);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.055em;
+}
+
+.login-service-loop__route {
+  stroke: color-mix(in oklab, var(--accent) 55%, var(--line-strong));
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 5 10;
+  animation: service-route 5s linear infinite;
+}
+
+.login-service-loop__runner-halo {
+  fill: var(--accent-soft);
+  stroke: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+.login-service-loop__runner,
+.login-service-loop__runner-halo {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: service-runner 7.2s var(--ease-out) infinite;
+}
+
+.login-service-loop__stage {
+  opacity: 0.52;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: service-stage 7.2s var(--ease-out) infinite;
+}
+
+.login-service-loop__stage--ticket { animation-delay: -5.4s; }
+.login-service-loop__stage--kitchen { animation-delay: -3.6s; }
+.login-service-loop__stage--served { animation-delay: -1.8s; }
+
+.login-service-loop__steam {
+  stroke: var(--fg-tertiary);
+  stroke-width: 2;
+  animation: service-steam 2.2s ease-in-out infinite;
+}
+
+.login-service-loop__steam--two { animation-delay: 0.55s; }
+.login-service-loop__ticker-dot { animation: service-ticker 1.4s ease-in-out infinite; }
+
+@keyframes service-route {
+  to { stroke-dashoffset: -90; }
+}
+
+@keyframes service-runner {
+  0%, 100% { opacity: 0; transform: translate(0, 0); }
+  7% { opacity: 1; transform: translate(0, 0); }
+  25% { opacity: 1; transform: translate(144px, -73px); }
+  50% { opacity: 1; transform: translate(298px, -160px); }
+  75% { opacity: 1; transform: translate(441px, -241px); }
+  88% { opacity: 0; transform: translate(441px, -241px); }
+}
+
+@keyframes service-stage {
+  0%, 20% { opacity: 1; transform: translateY(-6px); }
+  32%, 100% { opacity: 0.52; transform: translateY(0); }
+}
+
+@keyframes service-steam {
+  0%, 100% { opacity: 0.18; transform: translateY(4px); }
+  50% { opacity: 0.8; transform: translateY(-4px); }
+}
+
+@keyframes service-ticker {
+  50% { opacity: 0.35; transform: scale(0.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-service-loop__route,
+  .login-service-loop__stage,
+  .login-service-loop__steam,
+  .login-service-loop__ticker-dot {
+    animation: none;
+  }
+
+  .login-service-loop__stage { opacity: 1; }
+  .login-service-loop__runner,
+  .login-service-loop__runner-halo { display: none; }
+}
+
+/*
+ * Print: nothing but the ticket.
+ *
+ * `visibility` (not `display`) keeps the print area in the document flow of
+ * its own subtree while blanking the app around it — one rule instead of a
+ * print-only route. Width comes from the outlet's paper roll, set inline as
+ * --print-width by the component (58mm roll → 48mm printable, 80mm → 72mm).
+ */
+@media print {
+  @page {
+    margin: 3mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    height: auto;
+  }
+
+  body * {
+    visibility: hidden;
+    box-shadow: none !important;
+  }
+
+  [data-print-area],
+  [data-print-area] * {
+    visibility: visible;
+  }
+
+  [data-print-area] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--print-width, 72mm);
+    color: #000;
+    background: #fff;
+  }
+
+  /* An A4 sheet of QR cards prints across the page, not down a till roll. */
+  [data-print-area="sheet"] {
+    width: 100%;
+  }
+}

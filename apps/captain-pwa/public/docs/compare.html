@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Odr vs traditional POS · Odr</title>
+<link rel="icon" href="/icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #faf8f2; --card: #fffefb; --ink: #2b2620; --ink-2: #5c554a;
+    --muted: #8a8175; --line: #e8e2d4; --accent: #1f8a5f; --accent-soft: #e3f2ea;
+    --warn: #c26a5a;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.6 "IBM Plex Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  .mark { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: -0.04em; font-size: 20px; }
+  h1 { font-size: clamp(28px, 5vw, 38px); letter-spacing: -0.03em; line-height: 1.15; margin: 28px 0 10px; }
+  .lede { color: var(--ink-2); font-size: 17px; max-width: 58ch; }
+  h2 { font-size: 22px; letter-spacing: -0.02em; margin: 48px 0 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 22px 22px 18px; margin-bottom: 14px;
+  }
+  .card header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .card h3 { font-size: 18px; letter-spacing: -0.01em; }
+  .tag {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--accent-soft); color: var(--accent);
+    padding: 3px 9px; border-radius: 999px;
+  }
+  .who { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  ul { padding-left: 0; list-style: none; }
+  li { padding: 5px 0 5px 26px; position: relative; font-size: 15px; }
+  li::before { content: "✓"; position: absolute; left: 2px; color: var(--accent); font-weight: 700; }
+  li.no { color: var(--muted); }
+  li.no::before { content: "✕"; color: var(--warn); }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+  th, td { padding: 10px 14px; text-align: center; border-top: 1px solid var(--line); }
+  thead th { border-top: 0; background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+  th:first-child, td:first-child { text-align: left; font-weight: 500; }
+  td.y { color: var(--accent); font-weight: 700; }
+  td.n { color: #cfc8ba; }
+  td.note { color: var(--ink-2); font-weight: 400; font-size: 13px; }
+  .tip {
+    margin-top: 40px; padding: 16px 20px; border-radius: 14px;
+    background: var(--accent-soft); color: var(--ink-2); font-size: 15px;
+  }
+  .tip strong { color: var(--ink); }
+  .honest {
+    margin-top: 14px; padding: 16px 20px; border-radius: 14px;
+    background: #f6efe3; color: var(--ink-2); font-size: 14px; border: 1px solid var(--line);
+  }
+  footer { margin-top: 56px; color: var(--muted); font-size: 13px; }
+  footer a { color: var(--accent); }
+  .fine { color: var(--muted); font-size: 12.5px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="mark">
+    <svg viewBox="0 0 256 256" width="26" height="26" aria-hidden="true" style="overflow:visible">
+      <circle cx="122" cy="128" r="72" fill="none" stroke="#1f8a5f" stroke-width="30" stroke-linecap="round" stroke-dasharray="402 50" transform="rotate(7 122 128)"/>
+      <circle cx="220" cy="128" r="15" fill="#1f8a5f"/>
+    </svg>
+    odr
+  </span>
+
+  <h1>Why restaurants pick Odr</h1>
+  <p class="lede">
+    A plain comparison with the traditional POS software most Indian restaurants know —
+    Petpooja and similar systems. No jargon, just what you actually pay for and get.
+  </p>
+
+  <h2>What makes Odr different</h2>
+
+  <div class="card">
+    <header><h3>Everything included, one price</h3> <span class="tag">No add-ons</span></header>
+    <p class="who">Traditional POS systems sell the base billing software, then charge separately for extras.</p>
+    <ul>
+      <li>Kitchen display (KDS), QR ordering, sales reports, staff logins — all included</li>
+      <li>No setup or onboarding fee; we set your menu and tables up for you</li>
+      <li>No per-device or per-user charges — add your whole team</li>
+      <li class="no">Elsewhere: KDS, QR ordering and analytics are typically paid add-ons, with setup fees commonly in the thousands</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>No hardware to buy</h3> <span class="tag">Works on any phone</span></header>
+    <p class="who">Odr is an app your team installs from a link — a thermal printer is all the hardware you need.</p>
+    <ul>
+      <li>Runs on the phones and tablets you already own — Android, iPhone, iPad, any laptop</li>
+      <li>Waiters take orders at the table from their own phone</li>
+      <li>Your existing thermal printer (58/80mm) works for KOTs and bills</li>
+      <li class="no">Elsewhere: billing counters usually mean a dedicated machine per outlet</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>Diners order by QR — no app, no login</h3> <span class="tag">Included</span></header>
+    <p class="who">Print the QR sheet once; guests scan, browse the live menu with photos, and order.</p>
+    <ul>
+      <li>Menu changes go live for diners the second you save them</li>
+      <li>Orders land straight on the kitchen display</li>
+      <li>Mark a dish sold out in one tap — it disappears from the diner menu instantly</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>The app wears your brand</h3> <span class="tag">Unique to Odr</span></header>
+    <p class="who">Not a generic billing screen — your restaurant's identity, everywhere.</p>
+    <ul>
+      <li>Your logo, your colors, your font — the whole app restyles itself</li>
+      <li>Five looks (Classic, Gradient, Soft, Sharp, Glass) plus light and dark themes</li>
+      <li>Set once by the owner; every staff device follows automatically</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>Simple enough to learn in a shift</h3> <span class="tag">No training needed</span></header>
+    <p class="who">Built for waiters and cashiers, not accountants.</p>
+    <ul>
+      <li>Tables, orders, KOT, bill — four taps from seating to printing</li>
+      <li>Five clear staff roles so everyone sees only what their job needs (<a href="/docs/roles">see roles</a>)</li>
+      <li>Sign in once — the app stays signed in, no daily logins</li>
+      <li class="no">Elsewhere: feature-heavy screens usually mean paid on-site training days</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>A real person sets you up</h3> <span class="tag">Onboarding by us</span></header>
+    <p class="who">We don't hand you software and wish you luck.</p>
+    <ul>
+      <li>We load your menu, tables and staff before you start — same day</li>
+      <li>Direct support from the team that builds the product</li>
+      <li>Pay-as-you-go subscription — extend when you're happy, no year-long lock-in</li>
+    </ul>
+  </div>
+
+  <h2>Side by side</h2>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th></th><th>Odr</th><th>Typical POS (e.g. Petpooja)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Billing, KOT &amp; table management</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>Kitchen display (KDS)</td><td class="y">Included</td><td class="note">Usually a paid add-on</td></tr>
+        <tr><td>QR ordering for diners</td><td class="y">Included</td><td class="note">Usually a paid add-on</td></tr>
+        <tr><td>Setup / onboarding fee</td><td class="y">None</td><td class="note">Commonly ₹5,000–15,000</td></tr>
+        <tr><td>Hardware needed</td><td class="y">Just a thermal printer</td><td class="note">Billing machine + printer</td></tr>
+        <tr><td>Brand customisation — logo, colors, font, layouts</td><td class="y">✓</td><td class="n">–</td></tr>
+        <tr><td>Staff roles &amp; permissions</td><td class="y">Included</td><td class="y">✓</td></tr>
+        <tr><td>Contract lock-in</td><td class="y">None</td><td class="note">Annual plans are the norm</td></tr>
+        <tr><td>Deep inventory &amp; recipe costing</td><td class="n">Not yet</td><td class="y">✓</td></tr>
+        <tr><td>Zomato/Swiggy auto-sync</td><td class="note">Manual entry today</td><td class="note">Available, often paid per platform</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="fine">
+    Competitor details are from publicly available pricing pages and reviews as of August 2026 and
+    vary by plan and reseller — always confirm current pricing with the vendor.
+  </p>
+
+  <div class="honest">
+    <strong>Where we're honest:</strong> if you need deep inventory management, recipe-level food
+    costing, or automatic Zomato/Swiggy menu sync today, a heavyweight POS may fit better.
+    Odr focuses on running your floor beautifully — orders, kitchen, billing and your brand —
+    at a price that doesn't grow add-on by add-on.
+  </div>
+
+  <div class="tip">
+    <strong>Want to see it with your own menu?</strong> We'll set up a working demo of your
+    restaurant — your dishes, your tables, your logo — before you pay anything.
+  </div>
+
+  <footer>Odr · simple restaurant software · <a href="/docs/roles">Roles &amp; access</a></footer>
+</div>
+</body>
+</html>

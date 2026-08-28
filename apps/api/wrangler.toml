@@ -1,0 +1,21 @@
+# Odr API on Cloudflare Workers.
+# Secrets (wrangler secret put): DATABASE_URL, JWT_SECRET, ADMIN_KEY
+# Custom-domain routes get added here once a zone exists on the account —
+# see docs/deploy/cloudflare.md "Same-origin" section.
+name = "odr-api"
+main = "src/worker.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+DEFAULT_COUNTRY = "IN"
+# Supabase Auth backs the admin-console team sign-in. The anon key is publishable.
+SUPABASE_URL = "https://vgtrqvsicskebnqyzwfd.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZndHJxdnNpY3NrZWJucXl6d2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4OTQwOTIsImV4cCI6MjA5MzQ3MDA5Mn0.PPwMEkd17Rjkr6WDj4DI2x-xOMkFXClYrU8EpZNoaG8"
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "b0f1b3410bdf4b7995c00d554619d3fe"
+
+[observability]
+enabled = true

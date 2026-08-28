@@ -1,0 +1,33 @@
+export default {
+  extends: ["@commitlint/config-conventional"],
+  rules: {
+    "scope-enum": [
+      2,
+      "always",
+      [
+        "api",
+        "api/admin",
+        "api/billing",
+        "api/identity",
+        "api/menu",
+        "api/ordering",
+        "api/outlets",
+        "auth",
+        "db",
+        "events",
+        "packages",
+        "printing",
+        "shared",
+        "tax",
+        "tenancy",
+        "ui",
+        "web",
+        "captain-pwa",
+        "admin",
+        "diner",
+        "ci",
+        "deps",
+      ],
+    ],
+  },
+};

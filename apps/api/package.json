@@ -1,0 +1,21 @@
+{
+  "name": "@odr/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot ./src/server.ts",
+    "start": "bun ./src/server.ts"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "zod": "^3.23.8",
+    "drizzle-orm": "^0.45.0",
+    "@odr/db": "workspace:*",
+    "@odr/shared": "workspace:*",
+    "@odr/auth": "workspace:*",
+    "@odr/tenancy": "workspace:*",
+    "@odr/tax": "workspace:*",
+    "@odr/printing": "workspace:*",
+    "@odr/events": "workspace:*"
+  }
+}

@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Odr Handbook</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm; }
+
+  :root {
+    --green: #40D39A;
+    --ink: #111713;
+    --muted: #5a655e;
+    --line: #dfe5e1;
+    --wash: #f4f8f6;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: var(--ink);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  h1, h2, h3 { line-height: 1.2; margin: 0; }
+
+  /* ── cover ─────────────────────────────────────────────── */
+  .cover {
+    height: 245mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    page-break-after: always;
+  }
+  .cover .brand { display: flex; align-items: center; gap: 14px; }
+  .cover h1 { font-size: 46pt; letter-spacing: -0.035em; margin-top: 60px; }
+  .cover .sub { font-size: 14pt; color: var(--muted); margin-top: 14px; max-width: 120mm; }
+  .cover .foot { margin-top: auto; font-size: 9pt; color: var(--muted); }
+  .rule { height: 4px; background: var(--green); width: 64px; margin: 34px 0; border-radius: 2px; }
+
+  /* ── sections ──────────────────────────────────────────── */
+  section { page-break-before: always; }
+  section:first-of-type { page-break-before: avoid; }
+
+  .num {
+    font-size: 9pt;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--green);
+    font-weight: 700;
+  }
+  h2 { font-size: 21pt; letter-spacing: -0.02em; margin: 6px 0 4px; }
+  .lede { color: var(--muted); font-size: 11pt; margin-bottom: 20px; }
+
+  h3 {
+    font-size: 11.5pt;
+    margin: 22px 0 6px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 20px; }
+  li { margin: 5px 0; }
+
+  /* steps */
+  ol.steps { list-style: none; padding-left: 0; counter-reset: s; }
+  ol.steps > li {
+    counter-increment: s;
+    position: relative;
+    padding-left: 30px;
+    margin: 11px 0;
+  }
+  ol.steps > li::before {
+    content: counter(s);
+    position: absolute;
+    left: 0; top: 1px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #fff;
+    font-size: 9pt;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 10pt; }
+  th {
+    text-align: left;
+    font-size: 8.5pt;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1.5px solid var(--ink);
+    padding: 6px 10px 6px 0;
+    font-weight: 700;
+  }
+  td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+
+  .note {
+    background: var(--wash);
+    border-left: 3px solid var(--green);
+    padding: 11px 14px;
+    margin: 16px 0;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+  .note strong { display: block; margin-bottom: 2px; }
+
+  .pill {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 20px;
+    font-size: 8.5pt;
+    font-weight: 700;
+    background: var(--wash);
+    border: 1px solid var(--line);
+  }
+  .pill.g { background: rgba(64,211,154,.18); border-color: rgba(64,211,154,.5); }
+
+  code {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 9pt;
+    background: var(--wash);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .cards { display: flex; gap: 12px; margin: 14px 0; }
+  .card {
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    page-break-inside: avoid;
+  }
+  .card h4 { margin: 0 0 4px; font-size: 10.5pt; }
+  .card p { margin: 0; font-size: 9.5pt; color: var(--muted); }
+
+  /* The wall card has to be ONE page or it is not a wall card. */
+  .compact h3 { margin: 13px 0 2px; }
+  .compact td { padding: 4.5px 10px 4.5px 0; }
+  .compact .lede { margin-bottom: 10px; }
+
+  footer {
+    margin-top: 26px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    font-size: 8.5pt;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════ COVER ══════════════════════════════ -->
+<div class="cover">
+  <div class="brand">
+    <svg viewBox="0 0 256 256" width="52" height="52">
+      <circle cx="122" cy="128" r="72" fill="none" stroke="#40D39A" stroke-width="30"
+              stroke-linecap="round" stroke-dasharray="402 50" transform="rotate(7 122 128)"/>
+      <circle cx="220" cy="128" r="15" fill="#40D39A"/>
+    </svg>
+    <span style="font-size:30pt;font-weight:700;letter-spacing:-0.05em">odr</span>
+  </div>
+
+  <h1>The Odr<br/>Handbook</h1>
+  <div class="rule"></div>
+  <p class="sub">
+    Everything your restaurant runs on — the floor, the kitchen, the bill and
+    the QR menu. Written for waiters, cashiers and owners. No jargon.
+  </p>
+
+  <div class="foot">
+    Point of sale for restaurants that run on rhythm · Made in Mangaluru<br/>
+    Version 1.0 · FY 2026&ndash;27
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+      Powered by <strong style="color:var(--ink)">zowcode.com</strong>
+      &nbsp;·&nbsp; <a href="mailto:hello@zowcode.com" style="color:var(--ink)">hello@zowcode.com</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ 1 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 01</div>
+  <h2>What Odr is</h2>
+  <p class="lede">Four screens. One restaurant.</p>
+
+  <p>
+    Odr replaces the billing machine, the KOT pad and the printed menu. Everything
+    runs in a normal web browser — on a phone, a tablet, the counter computer or a
+    TV in the kitchen. There is nothing to install.
+  </p>
+
+  <table>
+    <thead><tr><th>Screen</th><th>Who uses it</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Captain</td>
+        <td>Waiters, cashier, owner</td>
+        <td>Open tables, take orders, fire the kitchen, settle and print the bill.</td>
+      </tr>
+      <tr>
+        <td>Kitchen</td>
+        <td>Cooks</td>
+        <td>A live list of what to cook. Tap <span class="pill">Done</span> when a dish leaves the pass.</td>
+      </tr>
+      <tr>
+        <td>QR menu</td>
+        <td>Diners</td>
+        <td>Scan the table code, browse the menu, order. No app, no login.</td>
+      </tr>
+      <tr>
+        <td>Admin</td>
+        <td>Odr team only</td>
+        <td>Sets up your restaurant and your subscription.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>No payments inside Odr</strong>
+    Odr never takes money. Diners pay at the counter — cash, UPI, card, however you
+    already do it. Odr records what was ordered and prints the bill.
+  </div>
+
+  <h3>Words you will see</h3>
+  <table>
+    <tbody>
+      <tr><td>Order</td><td>Everything one table (or one parcel) has asked for.</td></tr>
+      <tr><td>KOT</td><td>Kitchen Order Ticket — the slip that tells the kitchen to start cooking.</td></tr>
+      <tr><td>Fire</td><td>Send the items to the kitchen.</td></tr>
+      <tr><td>Settle</td><td>Close the order and produce the bill.</td></tr>
+      <tr><td>Void</td><td>Cancel an order opened by mistake.</td></tr>
+      <tr><td>Off-table</td><td>Parcel, Zomato, Swiggy — an order with no table.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════════════════════════ 2 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 02</div>
+  <h2>Starting your shift</h2>
+  <p class="lede">Sign in once. Stay signed in all day.</p>
+
+  <ol class="steps">
+    <li>Open the Odr address in the browser. Bookmark it, or add it to the home screen so it opens like an app.</li>
+    <li>Type your email and password. Tap <span class="pill g">Begin shift</span>.</li>
+    <li>If you work at more than one restaurant, pick the one you are in today.</li>
+    <li>You land on the <strong>Tables</strong> screen. You are ready.</li>
+  </ol>
+
+  <h3>The bar across the top</h3>
+  <ul>
+    <li><strong>Restaurant name and your email</strong> — check you are in the right place.</li>
+    <li><strong>Connected / Working offline</strong> — tells you whether the internet is reachable.</li>
+    <li><strong>Sun / moon</strong> — switches between light and dark. Dark is easier at night.</li>
+    <li><strong>Icons</strong> — Tables, Kitchen, Settings, Sign out.</li>
+  </ul>
+
+  <div class="note">
+    <strong>If a yellow strip appears</strong>
+    Your subscription is ending within 7 days. Tell the owner to contact Odr. When it
+    runs out the screen locks and no orders can be taken.
+  </div>
+
+  <h3>Who can do what</h3>
+  <p>
+    Each role is the one below it plus a little more. Nobody is ever blocked
+    from serving a customer — the differences are only about money and settings.
+  </p>
+  <table>
+    <thead><tr><th>Role</th><th>Adds on top of the row above</th></tr></thead>
+    <tbody>
+      <tr><td>Captain</td><td>Open tables, take orders, add items at any time, fire KOTs.</td></tr>
+      <tr><td>Cashier</td><td>&hellip; and settle orders, make and print bills.</td></tr>
+      <tr><td>Manager</td><td>&hellip; and void orders, edit the menu, change tables and printer settings. Can see the staff list.</td></tr>
+      <tr><td>Owner</td><td>&hellip; and add or remove staff. The owner can do <strong>everything</strong>.</td></tr>
+      <tr><td>Kitchen</td><td>A read-only login for a kitchen screen. Cannot take or change orders.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>A one- or two-person restaurant: sign in as the owner</strong>
+    If the same person seats the table, takes the order, cooks or plates, and
+    takes the money, they should use the <strong>owner</strong> login and nothing
+    else. Owner includes every captain, cashier and manager ability, so one
+    person runs the whole floor from one screen. Only create captain or cashier
+    logins once you actually have separate staff and want to limit what they can
+    reach.
+  </div>
+
+  <p>
+    There is no "switch role" button, and it would not help: an owner already
+    has every ability a captain or cashier has. Switching down would only take
+    abilities away. If a waiter is busy, the owner just does the task on their
+    own screen.
+  </p>
+</section>
+
+<!-- ══════════════════════════════ 3 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 03</div>
+  <h2>The floor</h2>
+  <p class="lede">One screen that shows the whole restaurant. It refreshes itself every 5 seconds.</p>
+
+  <h3>The four numbers at the top</h3>
+  <table>
+    <tbody>
+      <tr><td>Occupied</td><td>Tables with an order running.</td></tr>
+      <tr><td>Ready to bill</td><td>Tables whose food has been fired — likely eating now.</td></tr>
+      <tr><td>Free</td><td>Tables you can seat someone at.</td></tr>
+      <tr><td>Open value</td><td>Money currently sitting on the floor, unbilled.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Reading a table tile</h3>
+  <ul>
+    <li><strong>FREE</strong> — nobody seated. Tap it to open an order.</li>
+    <li><span class="pill">Open</span> — order started, nothing ordered yet.</li>
+    <li><span class="pill">Adding</span> — items on the order, not yet sent to the kitchen.</li>
+    <li><span class="pill">Fired</span> — the kitchen is cooking.</li>
+    <li>A green <span class="pill g">QR</span> badge means the diner ordered from their own phone.</li>
+    <li>A number in the corner (<code>46m</code>) is how long the table has been running. Over 30 minutes the tile gets an outline — worth a look.</li>
+  </ul>
+
+  <h3>Filters</h3>
+  <p>
+    <strong>All · Occupied · Ready to bill · Free.</strong> During a rush, tap
+    <em>Ready to bill</em> to see only the tables that may want the cheque.
+  </p>
+
+  <div class="note">
+    <strong>Off-table strip</strong>
+    Parcels and Zomato/Swiggy orders appear in their own row above the tables, so
+    they never get lost between the tables.
+  </div>
+</section>
+
+<!-- ══════════════════════════════ 4 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 04</div>
+  <h2>Taking an order</h2>
+  <p class="lede">The screen every waiter lives in. It works with one thumb on a phone.</p>
+
+  <ol class="steps">
+    <li>Tap a <strong>free table</strong>. The order opens straight away.</li>
+    <li>Pick a category (Dosa, Drinks, Snacks) or type in <strong>Search the menu</strong> — search looks at the whole menu, not just the open category.</li>
+    <li>Tap <span class="pill">+</span> on a dish to add it. Tap again for a second one.</li>
+    <li>Open the cart: on a phone, the bar at the bottom; on a computer, it is already on the right.</li>
+    <li>Fix quantities with <span class="pill">&minus;</span> / <span class="pill">+</span>, remove with the bin icon, and type any instruction in <strong>Note for the kitchen</strong> — "no onion", "less spicy".</li>
+    <li>Tap <span class="pill g">Fire KOT</span>. The kitchen sees it within 5 seconds.</li>
+  </ol>
+
+  <h3>The cart has two halves</h3>
+  <div class="cards">
+    <div class="card">
+      <h4>Not sent yet</h4>
+      <p>Still on your phone. You can change or delete anything here freely.</p>
+    </div>
+    <div class="card">
+      <h4>Sent to the order</h4>
+      <p>Already with the kitchen and on the bill. It cannot be edited from here.</p>
+    </div>
+  </div>
+
+  <h3>The customer wants one more thing</h3>
+  <p>
+    This is the most common thing that happens, and it is fully supported at any
+    point until the bill is settled. A second round of drinks, an extra roti, a
+    parcel on the way out — all the same steps:
+  </p>
+  <ol class="steps">
+    <li>Tap the same table again (it will say <span class="pill">Fired</span>).</li>
+    <li>Add the new dishes.</li>
+    <li>Press <strong>Fire KOT</strong> again.</li>
+  </ol>
+  <p>
+    The kitchen gets a <strong>fresh ticket with only the new items</strong> —
+    the first round is never sent twice. Everything lands on one bill at the end.
+  </p>
+
+  <div class="note">
+    <strong>Two things staff notice</strong>
+    While there are unsent items the tile goes back to <span class="pill">Adding</span>
+    — the kitchen has not lost the first round, it just means something is
+    waiting to be fired. And <strong>Settle &amp; bill</strong> stays greyed out
+    until you fire, so nobody bills food the kitchen never received.
+    Waiters, cashiers, managers and owners can all do this.
+  </div>
+
+  <div class="note">
+    <strong>Your phone locking will not lose the order</strong>
+    Items you have added but not yet sent are saved on the device. Unlock, reopen
+    Odr, and they are still there.
+  </div>
+
+  <h3>Opened a table by mistake?</h3>
+  <p>
+    A manager or owner taps <strong>Void order</strong> at the bottom of the cart and
+    confirms. The table goes back to Free. A voided order is never billed.
+  </p>
+</section>
+
+<!-- ══════════════════════════════ 5 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 05</div>
+  <h2>The kitchen screen</h2>
+  <p class="lede">Put it on a tablet or a TV near the pass and leave it running.</p>
+
+  <p>
+    Every fired KOT appears as a card, oldest first, and refreshes itself every 5
+    seconds. Nobody needs to touch a keyboard.
+  </p>
+
+  <h3>What is on a card</h3>
+  <ul>
+    <li>The <strong>table number</strong>, big enough to read across the kitchen.</li>
+    <li>The ticket number, e.g. <code>KOT-0004</code>, and a <span class="pill g">QR</span> or
+        <span class="pill">ZOMATO</span> badge if it did not come from a waiter.</li>
+    <li>Each dish with its quantity, and any note marked <strong>✱</strong>.</li>
+    <li>The minutes since it was fired, and a coloured bar down the left edge.</li>
+  </ul>
+
+  <h3>The colour bar</h3>
+  <table>
+    <tbody>
+      <tr><td style="color:#2e9e6b">Green</td><td>Under 5 minutes — just came in.</td></tr>
+      <tr><td style="color:#b8860b">Amber</td><td>Under 12 minutes — should be moving.</td></tr>
+      <tr><td style="color:#c0392b">Red</td><td>12 minutes or more — this table is waiting.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Clearing a ticket</h3>
+  <p>
+    When the food goes out, tap the big <span class="pill g">Done</span> button. The
+    card disappears. If you tap it by mistake the waiter can still see everything on
+    the order — nothing is lost, the ticket just leaves the kitchen list.
+  </p>
+</section>
+
+<!-- ══════════════════════════════ 6 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 06</div>
+  <h2>The bill</h2>
+  <p class="lede">Settle, print, take the money at the counter.</p>
+
+  <ol class="steps">
+    <li>Open the table and press <span class="pill g">Settle &amp; bill</span>.</li>
+    <li>The bill appears with GST worked out for you.</li>
+    <li>Press <strong>Print</strong> to print on any printer connected to the device, or <strong>Kitchen printer</strong> to send it straight to the thermal printer over Wi-Fi.</li>
+    <li>Collect payment at the counter. The table is free again.</li>
+  </ol>
+
+  <h3>What is on the bill</h3>
+  <ul>
+    <li>Restaurant name, address and GSTIN.</li>
+    <li>An invoice number that never repeats, e.g. <code>CS/2026-27/00004</code>.</li>
+    <li>Every dish with quantity and line total.</li>
+    <li>CGST and SGST shown <strong>separately for each tax rate</strong>. A 5% dish and a 12% dish get their own lines — that is what GST requires.</li>
+    <li>The grand total.</li>
+  </ul>
+
+  <div class="note">
+    <strong>If the printer does not answer</strong>
+    You will see "No printer answered". Check the printer is on and on the same
+    Wi-Fi, then use the ordinary Print button instead. The bill is already saved
+    either way — nothing is lost.
+  </div>
+
+  <h3>Paper size</h3>
+  <p>
+    Odr prints for the roll you actually own: a 58&nbsp;mm roll or an 80&nbsp;mm roll.
+    Set it once in Settings and every bill and KOT comes out the right width.
+  </p>
+</section>
+
+<!-- ══════════════════════════════ 7 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 07</div>
+  <h2>Parcels, Zomato and Swiggy</h2>
+  <p class="lede">Orders with no table go through the same kitchen and the same bill.</p>
+
+  <ol class="steps">
+    <li>On the Tables screen tap <span class="pill">Off-table</span>.</li>
+    <li>Choose <strong>Parcel</strong>, <strong>Zomato</strong>, <strong>Swiggy</strong> or <strong>Other</strong>.</li>
+    <li>Type the customer's name (for a parcel) or the app's order reference (for Zomato and Swiggy).</li>
+    <li>Tap <strong>Start order</strong> and add dishes exactly like a table.</li>
+  </ol>
+
+  <p>
+    It then appears in the <strong>Off-table</strong> strip on the floor screen with a
+    coloured badge, and the kitchen sees the same badge on the ticket so they know it
+    is going into a box, not onto a plate.
+  </p>
+
+  <div class="note">
+    <strong>Zomato and Swiggy are typed in by hand</strong>
+    Odr does not connect to their systems. Someone reads the order off the tablet and
+    enters it here. The benefit is that everything — dine-in, parcel, aggregator —
+    ends up in one kitchen queue and one set of numbers.
+  </div>
+</section>
+
+<!-- ══════════════════════════════ 8 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 08</div>
+  <h2>QR ordering</h2>
+  <p class="lede">The diner's own phone becomes the menu. Nothing to download.</p>
+
+  <h3>What the diner does</h3>
+  <ol class="steps">
+    <li>Points the phone camera at the QR card on the table.</li>
+    <li>The menu opens, showing the restaurant's name and their table number.</li>
+    <li>They browse by category, see the veg / non-veg square on every dish, and tap <strong>Add</strong>.</li>
+    <li>They review the cart, can add a note, then confirm.</li>
+    <li>They get a short order code and the message <em>"Pay at the counter"</em>.</li>
+  </ol>
+
+  <h3>What you see</h3>
+  <p>
+    The order appears on the floor screen on that diner's table with a green
+    <span class="pill g">QR</span> badge, and the dishes go to the kitchen the moment
+    the waiter fires the KOT. You settle and print it like any other table.
+  </p>
+
+  <div class="note">
+    <strong>Prices cannot be tampered with</strong>
+    The phone only sends which dish and how many. Every price and name comes from
+    your menu on the server. A diner cannot change what anything costs.
+  </div>
+
+  <h3>Putting the codes on the tables</h3>
+  <ol class="steps">
+    <li>Owner or manager opens <strong>Settings → Table QR codes</strong>.</li>
+    <li>Taps <strong>Generate codes</strong> — one unique code per table.</li>
+    <li>Taps <strong>Print sheet</strong> for an A4 page of cards, three to a row.</li>
+    <li>Cut along the dotted lines and stand one on each table. Laminating them is worth it.</li>
+  </ol>
+
+  <div class="note">
+    <strong>Print the cards once</strong>
+    Every card is tied to its table. Print them after your tables are named the way
+    you want them, so you do not have to reprint.
+  </div>
+</section>
+
+<!-- ══════════════════════════════ 9 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 09</div>
+  <h2>Settings</h2>
+  <p class="lede">Owners and managers only. Set it up once on day one.</p>
+
+  <h3>Tables</h3>
+  <p>
+    Type a range and Odr fills in the rest. <code>T-1 to T-12</code> creates twelve
+    tables. A comma list also works: <code>Bar-1, Bar-2, Window</code>. It shows you
+    what it is about to add before you commit. The bin icon removes one.
+  </p>
+
+  <h3>Table QR codes</h3>
+  <p>See Section 08. Generate, then print the sheet.</p>
+
+  <h3>Printing</h3>
+  <table>
+    <tbody>
+      <tr><td>Paper width</td><td>58&nbsp;mm or 80&nbsp;mm — match the roll you buy.</td></tr>
+      <tr><td>Kitchen printer IP</td><td>The printer's address on your Wi-Fi, e.g. <code>192.168.1.50</code>. Leave blank if you only print through the browser.</td></tr>
+      <tr><td>Port</td><td>Almost always <code>9100</code>. Leave it alone unless told otherwise.</td></tr>
+      <tr><td>Test print</td><td>Checks the printer answers, before a real bill depends on it.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Staff</h3>
+  <p>
+    Shows everyone who can sign in. To add someone, fill in their name, email, a
+    password of at least 8 characters, and pick a role (see Section 02). Give people
+    the smallest role that lets them do their job.
+  </p>
+  <p>
+    <strong>Removing someone.</strong> When a staff member leaves, tap the bin
+    next to their name. They can no longer sign in. Their past orders and bills
+    stay exactly as they were — nothing in your records changes.
+  </p>
+  <table>
+    <tbody>
+      <tr><td>Owner only</td><td>Adding and removing staff. A manager can see the list but not change it.</td></tr>
+      <tr><td>Yourself</td><td>Cannot be removed — it would lock you out of your own restaurant.</td></tr>
+      <tr><td>The last owner</td><td>Cannot be removed — somebody has to be able to manage the place.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>When someone leaves, remove them the same day</strong>
+    Their login works until you do. This is the one setting worth treating as
+    security rather than housekeeping.
+  </div>
+
+  <h3>Menu</h3>
+  <p>
+    The menu has its own screen — see Section 10. Odr loads your first menu when
+    you join; after that you change it yourself.
+  </p>
+</section>
+
+<!-- ══════════════════════════════ 10 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 10</div>
+  <h2>Editing your menu</h2>
+  <p class="lede">Owners and managers. One board, one tap for the thing you do daily.</p>
+
+  <p>
+    Open <strong>Menu</strong> from the side bar. Each section of your menu —
+    Dosa, Drinks, Snacks — is its own row of dish cards, laid out like the board
+    on the wall. Every change is live for waiters and diners the moment you save.
+  </p>
+
+  <h3>Sold out — the one you will use every day</h3>
+  <ol class="steps">
+    <li>Open <strong>Menu</strong>.</li>
+    <li>Find the dish and tap <span class="pill">Sold out</span>.</li>
+  </ol>
+  <p>
+    That is it. The dish disappears from the diner's QR menu and from the
+    waiter's order pad straight away, and a diner who still has it in their cart
+    is told it is unavailable rather than being billed for it. On the board the
+    card stays put, greyed with a <strong>SOLD OUT</strong> tag, so the kitchen
+    can see at a glance what is off. Tap <span class="pill g">Back on</span> when
+    it returns.
+  </p>
+
+  <h3>Changing a price or a name</h3>
+  <ol class="steps">
+    <li>Tap the dish card.</li>
+    <li>Edit the name, price, GST rate, description or veg / non-veg.</li>
+    <li><strong>Save</strong>. New orders use the new price immediately.</li>
+  </ol>
+  <div class="note">
+    <strong>Bills already printed do not change</strong>
+    Every order stores the price it was sold at. Editing a dish never rewrites
+    yesterday's takings.
+  </div>
+
+  <h3>Adding and removing</h3>
+  <table>
+    <tbody>
+      <tr><td>New dish</td><td>Tap <strong>Add dish</strong> at the end of a section.</td></tr>
+      <tr><td>New section</td><td>Type the name at the top right and tap <strong>Section</strong>.</td></tr>
+      <tr><td>Rename a section</td><td>Tap its title and type over it.</td></tr>
+      <tr><td>Delete a dish</td><td>Open the dish → <strong>Delete this dish</strong>. Past bills are untouched.</td></tr>
+      <tr><td>Delete a section</td><td>Only possible once it is empty — so a mis-tap cannot wipe half the menu.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>Photograph a printed menu to load it in bulk</strong>
+    For a big change, send Odr the menu and they import it in one go. Re-importing
+    a menu with corrected prices <em>updates</em> the existing dishes — it will not
+    leave you with each dish listed twice.
+  </div>
+</section>
+
+<!-- ══════════════════════════════ 11 ══════════════════════════════ -->
+<section>
+  <div class="num">Section 11</div>
+  <h2>When something goes wrong</h2>
+  <p class="lede">Almost everything is fixed by reloading. Your orders live on the server, not on the phone.</p>
+
+  <table>
+    <thead><tr><th>What you see</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>"Working offline"</td>
+        <td>The internet dropped. Check the Wi-Fi. Items you have added but not sent are safe; send them once it is back.</td>
+      </tr>
+      <tr>
+        <td>Sent back to Sign in</td>
+        <td>The shift session expired. Sign in again — nothing is lost.</td>
+      </tr>
+      <tr>
+        <td>"Something broke on this screen"</td>
+        <td>Tap <strong>Reload</strong>. If it comes straight back, tap <strong>Sign out</strong> and sign in again.</td>
+      </tr>
+      <tr>
+        <td>"Subscription ended"</td>
+        <td>Contact Odr to renew. No orders can be taken until it is.</td>
+      </tr>
+      <tr>
+        <td>"No printer answered"</td>
+        <td>Printer off, or on a different Wi-Fi. Use the plain <strong>Print</strong> button meanwhile.</td>
+      </tr>
+      <tr>
+        <td>A table is stuck occupied</td>
+        <td>Manager opens it and taps <strong>Void order</strong>.</td>
+      </tr>
+      <tr>
+        <td>"No tables yet"</td>
+        <td>Nobody has added the tables. Owner does it in Settings.</td>
+      </tr>
+      <tr>
+        <td>Diner says the QR does not work</td>
+        <td>Serve them the normal way, then check the card is the one printed for that table.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>The golden rule</strong>
+    Anything that was fired or settled is stored on the server. Losing, dropping or
+    reloading a phone never loses an order.
+  </div>
+</section>
+
+<!-- ══════════════════════════════ 11 ══════════════════════════════ -->
+<section class="compact">
+  <div class="num">Quick card</div>
+  <h2>One page for the wall</h2>
+  <p class="lede">Print this page and stick it behind the counter.</p>
+
+  <h3>Waiter</h3>
+  <table>
+    <tbody>
+      <tr><td>Seat a table</td><td>Tap the FREE tile.</td></tr>
+      <tr><td>Add dishes</td><td>Tap <strong>+</strong>. Search finds anything on the menu.</td></tr>
+      <tr><td>Special request</td><td>Type it in the note box on that line.</td></tr>
+      <tr><td>Send to kitchen</td><td><strong>Fire KOT</strong>.</td></tr>
+      <tr><td>Customer wants more</td><td>Same table, add, <strong>Fire KOT</strong> again. Only the new items go to the kitchen.</td></tr>
+      <tr><td>Parcel / Zomato</td><td><strong>Off-table</strong> button, top right.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Cashier</h3>
+  <table>
+    <tbody>
+      <tr><td>Make the bill</td><td>Open the table → <strong>Settle &amp; bill</strong>.</td></tr>
+      <tr><td>Print it</td><td><strong>Print</strong>, or <strong>Kitchen printer</strong> for the thermal one.</td></tr>
+      <tr><td>Payment</td><td>Taken at the counter. Odr does not handle money.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Kitchen</h3>
+  <table>
+    <tbody>
+      <tr><td>Read the card</td><td>Table number, dishes, notes marked ✱.</td></tr>
+      <tr><td>Red bar</td><td>12+ minutes. Push it out.</td></tr>
+      <tr><td>Food is out</td><td>Tap <strong>Done</strong>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Owner</h3>
+  <table>
+    <tbody>
+      <tr><td>Add tables</td><td>Settings → type <code>T-1 to T-12</code>.</td></tr>
+      <tr><td>Table QR codes</td><td>Settings → Generate → Print sheet → cut &amp; place.</td></tr>
+      <tr><td>Printer</td><td>Settings → paper width, IP, Test print.</td></tr>
+      <tr><td>Add staff</td><td>Settings → Staff → name, email, password, role.</td></tr>
+      <tr><td>Someone left</td><td>Settings → Staff → bin icon next to their name.</td></tr>
+      <tr><td>Dish is finished</td><td>Menu → tap <strong>Sold out</strong> on the card.</td></tr>
+      <tr><td>Change a price</td><td>Menu → tap the dish → edit → Save.</td></tr>
+      <tr><td>Cancel an order</td><td>Open it → <strong>Void order</strong>.</td></tr>
+      <tr><td>Working alone</td><td>Use the owner login. It can do everything.</td></tr>
+    </tbody>
+  </table>
+
+  <footer style="margin-top:16px">
+    Odr · Made in Mangaluru · Version 1.0 · FY 2026&ndash;27<br/>
+    Powered by <strong style="color:var(--ink)">zowcode.com</strong>
+    &nbsp;·&nbsp; Questions? <a href="mailto:hello@zowcode.com" style="color:var(--ink)">hello@zowcode.com</a>
+  </footer>
+</section>
+
+</body>
+</html>

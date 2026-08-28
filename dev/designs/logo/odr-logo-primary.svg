@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 240">
+  
+  <circle cx="112" cy="120" r="68" fill="none" stroke="#40D39A" stroke-width="28" stroke-linecap="round" stroke-dasharray="380 47" transform="rotate(7 112 120)"/>
+  <circle cx="204" cy="120" r="14" fill="#40D39A"/>
+  <text x="235" y="144" fill="#111713" font-family="Helvetica, Arial, sans-serif" font-size="116" font-weight="700" letter-spacing="-7">odr</text>
+</svg>

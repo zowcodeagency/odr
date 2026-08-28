@@ -1,0 +1,83 @@
+import { Hono } from "hono";
+import { db } from "@odr/db";
+import { InMemoryEventBus } from "@odr/events";
+import { errorHandler } from "./middleware/error.ts";
+import { authMiddleware } from "./middleware/auth.ts";
+import { identityModule } from "./modules/identity/module.ts";
+import { menuModule } from "./modules/menu/module.ts";
+import { outletsModule } from "./modules/outlets/module.ts";
+import { orderingModule } from "./modules/ordering/module.ts";
+import { billingModule } from "./modules/billing/module.ts";
+import { adminModule } from "./modules/admin/module.ts";
+import { publicModule } from "./modules/public/module.ts";
+import { printingModule } from "./modules/printing/module.ts";
+import { buildBrandingRoutes } from "./modules/branding/routes.ts";
+
+export const buildApp = async () => {
+  const app = new Hono();
+  const events = new InMemoryEventBus();
+
+  app.onError(errorHandler);
+  app.get("/health", (c) => c.json({ ok: true }));
+
+  const identity = identityModule({ db, events });
+  app.route("/auth", identity.publicRoutes);
+
+  const menu = menuModule({ db, events });
+
+  // Internal team surface — ADMIN_KEY bearer auth, no tenant JWT.
+  app.route("/admin", adminModule({ db, menu: menu.service }).routes);
+
+  const ordering = orderingModule({ db, events });
+  const outlets = outletsModule({ db, events });
+
+  // Diner QR surface — no JWT, gated by the outlet's public_token.
+  app.route("/public", publicModule({ db, menu: menu.service, ordering: ordering.service }).routes);
+
+  const protectedApp = new Hono();
+  protectedApp.use("*", authMiddleware);
+  protectedApp.route("/me", identity.privateRoutes);
+  protectedApp.route("/staff", identity.staffRoutes);
+  protectedApp.route("/menu", menu.routes);
+  protectedApp.route("/outlets", outlets.routes);
+  protectedApp.route("/tables", outlets.tableRoutes);
+  protectedApp.route("/branding", buildBrandingRoutes());
+  protectedApp.route("/ordering", ordering.routes);
+
+  // Billing reads orders via an OrderLookup adapter that maps the ordering
+  // domain to a slim "settleable" projection. Keeps modules decoupled — the
+  // billing module never imports from ordering directly.
+  const billing = billingModule({
+    db,
+    events,
+    country: () => process.env.DEFAULT_COUNTRY ?? "IN",
+    orders: {
+      byIdForBilling: async (tenantId, orderId) => {
+        const o = await ordering.service.byId(orderId);
+        if (!o || o.tenantId !== tenantId) return null;
+        return {
+          id: o.id,
+          outletId: o.outletId,
+          state: o.state,
+          lines: o.lines.map((l) => ({
+            itemId: l.itemId,
+            itemName: l.itemName,
+            qty: l.qty,
+            unitPriceMinor: l.unitPriceMinor,
+            taxClass: l.taxClass,
+          })),
+        };
+      },
+    },
+  });
+  protectedApp.route("/billing", billing.routes);
+
+  protectedApp.route(
+    "/print",
+    printingModule({ outlets: outlets.service, ordering: ordering.service, billing: billing.service }).routes,
+  );
+
+  app.route("/api/v1", protectedApp);
+
+  return app;
+};

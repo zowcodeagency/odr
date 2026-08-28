@@ -1,0 +1,16 @@
+{
+  "name": "Odr Captain",
+  "short_name": "Odr",
+  "description": "Captain & Cashier surface for Odr restaurant POS.",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#17181d",
+  "theme_color": "#17181d",
+  "start_url": "/",
+  "scope": "/",
+  "categories": ["business", "productivity", "food"],
+  "icons": [
+    { "src": "/icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "/icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "maskable" }
+  ]
+}

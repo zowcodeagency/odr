@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Roles &amp; access · Odr</title>
+<link rel="icon" href="/icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #faf8f2; --card: #fffefb; --ink: #2b2620; --ink-2: #5c554a;
+    --muted: #8a8175; --line: #e8e2d4; --accent: #1f8a5f; --accent-soft: #e3f2ea;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.6 "IBM Plex Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  .mark { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: -0.04em; font-size: 20px; }
+  .mark svg { display: block; }
+  h1 { font-size: clamp(28px, 5vw, 38px); letter-spacing: -0.03em; line-height: 1.15; margin: 28px 0 10px; }
+  .lede { color: var(--ink-2); font-size: 17px; max-width: 56ch; }
+  h2 { font-size: 22px; letter-spacing: -0.02em; margin: 48px 0 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 22px 22px 18px; margin-bottom: 14px;
+  }
+  .card header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .card h3 { font-size: 18px; letter-spacing: -0.01em; }
+  .tag {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--accent-soft); color: var(--accent);
+    padding: 3px 9px; border-radius: 999px;
+  }
+  .who { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  ul { padding-left: 0; list-style: none; }
+  li { padding: 5px 0 5px 26px; position: relative; font-size: 15px; }
+  li::before { content: "✓"; position: absolute; left: 2px; color: var(--accent); font-weight: 700; }
+  li.no { color: var(--muted); }
+  li.no::before { content: "✕"; color: #c26a5a; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+  th, td { padding: 10px 14px; text-align: center; border-top: 1px solid var(--line); }
+  thead th { border-top: 0; background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+  th:first-child, td:first-child { text-align: left; font-weight: 500; white-space: nowrap; }
+  td.y { color: var(--accent); font-weight: 700; }
+  td.n { color: #cfc8ba; }
+  .tip {
+    margin-top: 40px; padding: 16px 20px; border-radius: 14px;
+    background: var(--accent-soft); color: var(--ink-2); font-size: 15px;
+  }
+  .tip strong { color: var(--ink); }
+  footer { margin-top: 56px; color: var(--muted); font-size: 13px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="mark">
+    <svg viewBox="0 0 256 256" width="26" height="26" aria-hidden="true" style="overflow:visible">
+      <circle cx="122" cy="128" r="72" fill="none" stroke="#1f8a5f" stroke-width="30" stroke-linecap="round" stroke-dasharray="402 50" transform="rotate(7 122 128)"/>
+      <circle cx="220" cy="128" r="15" fill="#1f8a5f"/>
+    </svg>
+    odr
+  </span>
+
+  <h1>Roles &amp; access</h1>
+  <p class="lede">
+    Everyone on your team signs in with their own email and password.
+    Their <strong>role</strong> decides what they can see and do — nothing more, nothing less.
+  </p>
+
+  <h2>The five roles</h2>
+
+  <div class="card">
+    <header><h3>Owner</h3> <span class="tag">Full control</span></header>
+    <p class="who">The restaurant owner. Usually one person.</p>
+    <ul>
+      <li>Everything a manager can do, plus:</li>
+      <li>Add and remove staff, choose their roles</li>
+      <li>Customise the app's branding — logo, colors, font, theme</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>Manager</h3> <span class="tag">Runs the floor</span></header>
+    <p class="who">Your shift or floor manager.</p>
+    <ul>
+      <li>Take, fire and void orders; settle and refund bills</li>
+      <li>Edit the menu — dishes, prices, photos, sold-out</li>
+      <li>Manage tables, table QR codes and printers</li>
+      <li>See sales, invoices and the staff list</li>
+      <li class="no">Cannot add or remove staff, or change branding</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>Cashier</h3> <span class="tag">Takes the money</span></header>
+    <p class="who">Whoever sits at the till.</p>
+    <ul>
+      <li>Take orders and fire KOTs to the kitchen</li>
+      <li>Settle bills and record payments</li>
+      <li>See sales and past invoices</li>
+      <li class="no">Cannot edit the menu, void orders or change settings</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>Captain</h3> <span class="tag">Serves tables</span></header>
+    <p class="who">Waiters and stewards on the floor.</p>
+    <ul>
+      <li>Open tables and take orders</li>
+      <li>Fire KOTs to the kitchen</li>
+      <li class="no">Cannot settle bills or see sales</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>Kitchen</h3> <span class="tag">View only</span></header>
+    <p class="who">The kitchen display (KDS) login — often a shared TV or tablet.</p>
+    <ul>
+      <li>See incoming KOTs and mark them done</li>
+      <li class="no">Cannot create orders or touch anything else</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <header><h3>Diner</h3> <span class="tag">No login</span></header>
+    <p class="who">Your guests. They never install anything or sign in.</p>
+    <ul>
+      <li>Scan the table QR, browse the menu, place an order</li>
+    </ul>
+  </div>
+
+  <h2>At a glance</h2>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Can they…</th><th>Owner</th><th>Manager</th><th>Cashier</th><th>Captain</th><th>Kitchen</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Take orders &amp; fire KOTs</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">–</td></tr>
+        <tr><td>Void an order</td><td class="y">✓</td><td class="y">✓</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+        <tr><td>Settle bills</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">–</td><td class="n">–</td></tr>
+        <tr><td>Refunds</td><td class="y">✓</td><td class="y">✓</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+        <tr><td>See sales &amp; invoices</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">–</td><td class="n">–</td></tr>
+        <tr><td>Edit the menu</td><td class="y">✓</td><td class="y">✓</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+        <tr><td>Tables, QR &amp; printers</td><td class="y">✓</td><td class="y">✓</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+        <tr><td>Add / remove staff</td><td class="y">✓</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+        <tr><td>Branding (logo, colors, font)</td><td class="y">✓</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tip">
+    <strong>Changing someone's role:</strong> the owner opens
+    <strong>Settings → Staff</strong>, removes the member and adds them again with the new role.
+    It takes effect the moment they next use the app.
+  </div>
+
+  <footer>Odr · simple restaurant software</footer>
+</div>
+</body>
+</html>

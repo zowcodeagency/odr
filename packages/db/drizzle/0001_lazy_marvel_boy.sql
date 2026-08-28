@@ -1,0 +1,2 @@
+ALTER TABLE "menu_items" ADD COLUMN "outlet_id" uuid;--> statement-breakpoint
+ALTER TABLE "menu_items" ADD CONSTRAINT "menu_items_outlet_id_outlets_id_fk" FOREIGN KEY ("outlet_id") REFERENCES "public"."outlets"("id") ON DELETE cascade ON UPDATE no action;

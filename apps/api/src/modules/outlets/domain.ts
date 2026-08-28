@@ -1,0 +1,36 @@
+export type Address = {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+};
+
+export type Outlet = {
+  id: string;
+  name: string;
+  code: string;
+  gstin: string | null;
+  address: Address;
+  invoicePrefix: string;
+  paperWidth: number;
+  printerIp: string | null;
+  printerPort: number;
+  publicToken: string | null;
+};
+
+export type Table = { id: string; label: string };
+
+export type OutletSettings = {
+  paperWidth?: number;
+  printerIp?: string | null;
+  printerPort?: number;
+};
+
+/** Thermal rolls come in two sizes; anything else is a typo. */
+export const PAPER_WIDTHS = [58, 80] as const;
+export const isValidPaperWidth = (n: number): boolean => (PAPER_WIDTHS as readonly number[]).includes(n);
+
+const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+export const isValidGstin = (s: string): boolean => GSTIN_RE.test(s);

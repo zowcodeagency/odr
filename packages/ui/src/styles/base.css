@@ -1,0 +1,111 @@
+/*
+ * Base layer — reset, typography defaults, scrollbar, selection.
+ *
+ * Fonts are loaded via <link> in the consuming app's index.html — they
+ * cannot be @import'd here because CSS @import statements must precede
+ * any rule-bearing CSS (and this file is concatenated after tokens).
+ *
+ * Everything lives in `@layer base` — this file is imported *after*
+ * `@import "tailwindcss"`, and unlayered rules beat layered ones, so an
+ * unlayered `button { background: none }` would silently kill `bg-*`.
+ */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg-canvas);
+    color: var(--fg-primary);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--fg-primary);
+  }
+
+  /* Hairline scrollbar that disappears into the surface. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: var(--radius-pill);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  /* Focus ring — accent-colored, never blue-default. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-2);
+  }
+
+  /* Headings: one sans family, weight and tracking do the work. */
+  h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.014em;
+    color: var(--fg-primary);
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  button { cursor: pointer; background: none; border: 0; padding: 0; }
+
+  /* Receipt surface — paper, ink, monospaced, dotted dividers. */
+  .surface-receipt {
+    background: var(--bg-receipt);
+    color: var(--bg-receipt-ink);
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum";
+  }
+
+  /* Restaurant-style dotted divider — receipt vocabulary, receipt only. */
+  .divider-dotted {
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(
+      to right,
+      currentColor 0 3px,
+      transparent 3px 7px
+    );
+    background-size: 7px 1px;
+    background-repeat: repeat-x;
+    opacity: 0.35;
+    margin: var(--space-3) 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

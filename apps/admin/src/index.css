@@ -1,0 +1,119 @@
+/*
+ * Admin stylesheet entry — self-contained (no @odr/ui dependency).
+ *
+ * Order is load-bearing: tokens first, then Tailwind (it owns the file that
+ * imports it so the @source scanner picks our files up), then @theme inline
+ * to expose the tokens as utilities (bg-surface, text-muted, …).
+ */
+
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #fbfbfc;
+  --raised: #ffffff;
+  --line: #e6e7ea;
+  --ink: #16181d;
+  --muted: #6b7280;
+  --accent: #0e7c58;
+  --accent-ink: #ffffff;
+  --accent-soft: #e7f6ef;
+  --ok: #157f4a;
+  --ok-soft: #e6f5ec;
+  --warn: #a1640a;
+  --warn-soft: #fdf2dd;
+  --bad: #c02a2a;
+  --bad-soft: #fbeaea;
+  --off: #6b7280;
+  --off-soft: #f1f2f4;
+  --shadow: 0 1px 2px rgb(16 18 24 / 6%), 0 12px 32px rgb(16 18 24 / 8%);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0c0e;
+  --surface: #121316;
+  --raised: #16181c;
+  --line: #26282e;
+  --ink: #e9ebee;
+  --muted: #9096a1;
+  --accent: #40d39a;
+  --accent-ink: #0b0c0e;
+  --accent-soft: #14291f;
+  --ok: #4ade9b;
+  --ok-soft: #12261d;
+  --warn: #f0bd63;
+  --warn-soft: #2a2113;
+  --bad: #ff8080;
+  --bad-soft: #2d1618;
+  --off: #9096a1;
+  --off-soft: #1d1f24;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 16px 40px rgb(0 0 0 / 45%);
+}
+
+@import "tailwindcss";
+
+@source "./**/*.{ts,tsx}";
+
+@theme inline {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-off: var(--off);
+  --color-off-soft: var(--off-soft);
+
+  --shadow-panel: var(--shadow);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Hairline borders everywhere: 1px that stays 1px on retina. */
+  * {
+    border-color: var(--line);
+  }
+
+  input,
+  textarea,
+  button,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::placeholder {
+    color: var(--muted);
+    opacity: 0.75;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}

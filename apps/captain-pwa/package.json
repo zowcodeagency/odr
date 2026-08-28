@@ -1,0 +1,25 @@
+{
+  "name": "@odr/captain-pwa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot src/server.ts",
+    "start": "NODE_ENV=production bun src/server.ts"
+  },
+  "dependencies": {
+    "@odr/shared": "workspace:*",
+    "@odr/ui": "workspace:*",
+    "lucide-react": "^0.460.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "bun-plugin-tailwind": "^0.1.2",
+    "@types/qrcode": "^1.5.5"
+  }
+}

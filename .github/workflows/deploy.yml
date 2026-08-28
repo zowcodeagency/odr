@@ -1,0 +1,53 @@
+name: Deploy
+
+# Front-ends only. The API is deployed by its own host until it moves to a
+# Worker (see docs/deploy/cloudflare.md).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      # Never ship a bundle that does not typecheck or pass tests.
+      - run: bun run typecheck
+      - run: bun test
+
+      - run: bun run build:web
+        env:
+          # Baked into the captain build and into every printed QR card.
+          DINER_ORIGIN: ${{ secrets.DINER_ORIGIN }}
+
+      - name: Captain
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/captain-pwa/dist --project-name odr-captain --branch main
+
+      - name: Diner
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/diner/dist --project-name odr-diner --branch main
+
+      - name: Admin
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/admin/dist --project-name odr-admin --branch main

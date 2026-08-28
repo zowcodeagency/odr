@@ -1,0 +1,35 @@
+{
+  "name": "odr",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "bun --hot apps/api/src/server.ts",
+    "dev:web": "bun --cwd apps/captain-pwa dev",
+    "dev:admin": "bun --cwd apps/admin dev",
+    "db:generate": "bun --cwd packages/db generate",
+    "db:migrate": "bun packages/db/src/migrate.ts",
+    "db:seed": "bun packages/db/src/seed.ts",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json",
+    "build:captain": "bun dev/build-web.ts captain-pwa",
+    "build:diner": "bun dev/build-web.ts diner",
+    "build:admin": "bun dev/build-web.ts admin",
+    "build:web": "bun run build:captain && bun run build:diner && bun run build:admin",
+    "prepare": "husky",
+    "dev:diner": "bun --cwd apps/diner dev"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
+    "@types/bun": "latest",
+    "bun-plugin-tailwind": "^0.1.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.6.0"
+  }
+}

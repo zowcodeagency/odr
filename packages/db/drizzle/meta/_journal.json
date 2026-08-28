@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1777953608407,
+      "tag": "0000_brown_korath",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777967707503,
+      "tag": "0001_lazy_marvel_boy",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777985824500,
+      "tag": "0002_sticky_human_torch",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787567268481,
+      "tag": "0003_sleepy_agent_brand",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787575202707,
+      "tag": "0004_red_manta",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787593350029,
+      "tag": "0005_abnormal_magdalene",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787651522614,
+      "tag": "0006_tranquil_switch",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787814062548,
+      "tag": "0007_worthless_mephisto",
+      "breakpoints": true
+    }
+  ]
+}
