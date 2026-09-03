@@ -39,6 +39,27 @@ export type Restaurant = {
   subscriptionEnd: string | null;
   daysRemaining: number | null;
   status: Status;
+  outletCount?: number;
+};
+
+export type AdminOutlet = {
+  id: string;
+  name: string;
+  code: string;
+  gstin: string | null;
+  city: string;
+  invoicePrefix: string;
+  isActive: boolean;
+  menuMode: "shared" | "own";
+  createdAt: string;
+};
+
+export type CreateOutletPayload = {
+  name: string;
+  gstin?: string;
+  address: { line1: string; line2?: string; city: string; state: string; pincode: string; country: string };
+  invoicePrefix?: string;
+  menuMode: "shared" | "own";
 };
 
 export type Topup = {
@@ -80,11 +101,11 @@ const stringifyError = (e: unknown): string =>
       ? String((e as { message: unknown }).message)
       : "";
 
-async function call<T>(key: string, path: string, body?: unknown): Promise<T> {
+async function call<T>(key: string, path: string, body?: unknown, method?: "PATCH"): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${BASE}/admin${path}`, {
-      method: body === undefined ? "GET" : "POST",
+      method: method ?? (body === undefined ? "GET" : "POST"),
       headers: {
         authorization: `Bearer ${key}`,
         ...(body === undefined ? {} : { "content-type": "application/json" }),
@@ -132,10 +153,16 @@ export const api = {
     id: string,
     p: { amount: number; monthsAdded: number; note?: string },
   ) => call<{ subscriptionEnd: string }>(key, `/restaurants/${id}/topups`, p),
-  importMenu: (key: string, id: string, payload: unknown) =>
-    call<{ categories: number; items: number }>(
+  outlets: (key: string, id: string) =>
+    call<{ outlets: AdminOutlet[] }>(key, `/restaurants/${id}/outlets`).then((r) => r.outlets),
+  createOutlet: (key: string, id: string, p: CreateOutletPayload) =>
+    call<{ outletId: string; code: string }>(key, `/restaurants/${id}/outlets`, p),
+  setOutletActive: (key: string, id: string, outletId: string, isActive: boolean) =>
+    call<{ outletId: string; isActive: boolean }>(key, `/restaurants/${id}/outlets/${outletId}`, { isActive }, "PATCH"),
+  importMenu: (key: string, id: string, payload: unknown, outletId?: string) =>
+    call<{ categoriesCreated: number; itemsCreated: number; itemsUpdated: number }>(
       key,
       `/restaurants/${id}/menu/import`,
-      payload,
+      outletId ? { ...(payload as object), outletId } : payload,
     ),
 };

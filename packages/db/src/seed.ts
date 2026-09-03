@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "./index.ts";
 import { tenants, users, memberships, outlets } from "./schema/index.ts";
 
@@ -40,6 +40,18 @@ const outlet = existingOutlet
     invoicePrefix: "MC",
   }).returning())[0]!;
 console.log(`outlet id=${outlet.id} code=${outlet.code} (${existingOutlet ? "existing" : "created"})`);
+
+const secondCode = "MNG-AIRPORT";
+const second = (await db.select().from(outlets).where(and(eq(outlets.tenantId, tenant.id), eq(outlets.code, secondCode))).limit(1))[0]
+  ?? (await db.insert(outlets).values({
+    tenantId: tenant.id,
+    name: "Mangalore Airport",
+    code: secondCode,
+    address: { line1: "Kenjar", city: "Mangalore", state: "Karnataka", pincode: "574142", country: "IN" },
+    invoicePrefix: "MA",
+    menuMode: "shared",
+  }).returning())[0]!;
+console.log(`outlet id=${second.id} code=${second.code}`);
 
 console.log("\n--- READY ---");
 console.log(`Login with:`);

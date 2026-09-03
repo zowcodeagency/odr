@@ -43,6 +43,12 @@ export const slugify = (name: string): string =>
 export const invoicePrefixFor = (name: string): string =>
   name.split(/\s+/).filter(Boolean).map((w) => w[0]!).join("").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3) || "INV";
 
+/** Outlet code: upper-case slug, ≤16 chars (the outlets.code column is what bills and QR sheets show). */
+export const outletCodeFor = (name: string): string => {
+  if (!name.trim()) return "OUTLET";
+  return slugify(name).toUpperCase().slice(0, 16).replace(/-$/, "");
+};
+
 // ---------------------------------------------------------------- menu import
 
 export const DEFAULT_TAX_CLASS = "GST_5";

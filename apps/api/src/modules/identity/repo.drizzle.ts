@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { subscriptionEndOf, type DB } from "@odr/db";
-import { users, memberships, tenants } from "@odr/db/schema";
+import { users, memberships, tenants, outlets } from "@odr/db/schema";
 import type { IdentityRepo } from "./ports.ts";
 
 export const drizzleIdentityRepo = (db: DB): IdentityRepo => ({
@@ -30,19 +30,36 @@ export const drizzleIdentityRepo = (db: DB): IdentityRepo => ({
 
   async listStaff(tenantId) {
     const rows = await db
-      .select({ id: users.id, email: users.email, fullName: users.fullName, role: memberships.role })
+      .select({
+        id: users.id,
+        email: users.email,
+        fullName: users.fullName,
+        role: memberships.role,
+        outletId: memberships.outletId,
+        outletName: outlets.name,
+      })
       .from(memberships)
       .innerJoin(users, eq(users.id, memberships.userId))
+      .leftJoin(outlets, eq(outlets.id, memberships.outletId))
       .where(eq(memberships.tenantId, tenantId))
       .orderBy(users.fullName);
     return rows;
   },
 
-  async addMembership(tenantId, userId, role) {
+  async addMembership(tenantId, userId, role, outletId) {
     await db
       .insert(memberships)
-      .values({ tenantId, userId, role })
-      .onConflictDoUpdate({ target: [memberships.tenantId, memberships.userId], set: { role } });
+      .values({ tenantId, userId, role, outletId })
+      .onConflictDoUpdate({ target: [memberships.tenantId, memberships.userId], set: { role, outletId } });
+  },
+
+  async outletExists(tenantId, outletId) {
+    const rows = await db
+      .select({ id: outlets.id })
+      .from(outlets)
+      .where(and(eq(outlets.tenantId, tenantId), eq(outlets.id, outletId)))
+      .limit(1);
+    return rows.length > 0;
   },
 
   async removeMembership(tenantId, userId) {

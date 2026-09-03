@@ -19,7 +19,7 @@ const parse = <S extends z.ZodTypeAny>(s: S, body: unknown): z.infer<S> => {
 };
 
 const serializeSummary = (b: {
-  id: string; orderId: string; invoiceNumber: string; currency: string;
+  id: string; outletId: string; orderId: string; invoiceNumber: string; currency: string;
   grandTotalMinor: bigint; customerName: string | null; customerPhone: string | null; settledAt: string;
 }) => ({ ...b, grandTotalMinor: b.grandTotalMinor.toString() });
 
@@ -47,10 +47,8 @@ export const buildBillingRoutes = (svc: BillingService) => {
 
   // Must be registered before /bills/:id or "bills" would match the param.
   r.get("/bills", async (c) => {
-    const outletId = c.req.query("outletId");
-    if (!outletId) throw new ValidationError("outletId required");
     const bills = await svc.list({
-      outletId,
+      ...(c.req.query("outletId") ? { outletId: c.req.query("outletId")! } : {}),
       ...(c.req.query("from") ? { from: c.req.query("from")! } : {}),
       ...(c.req.query("to") ? { to: c.req.query("to")! } : {}),
     });

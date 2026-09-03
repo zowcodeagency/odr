@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Loader2, Printer, QrCode, Trash2, UserPlus, Wifi } from "lucide-react";
 import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Input } from "@odr/ui";
 import { ApiError, api, errorCode, type Staff, type Table } from "../lib/api.ts";
@@ -7,7 +7,7 @@ import { useAsync, type Async } from "../lib/use-async.ts";
 import { toast } from "../lib/toast.tsx";
 import { parseLabels } from "../features/tables/labels.ts";
 import { QrImage, tableQrUrl } from "../features/qr/qr-image.tsx";
-import { canManage, patchSession, type Session } from "../lib/session.ts";
+import { canManage, outletPatch, patchSession, type Session } from "../lib/session.ts";
 
 const Section = ({
   title,
@@ -36,16 +36,109 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => (
   </label>
 );
 
-type SettingsTab = "tables" | "printing" | "staff";
+/* ---------------------------------------------------------------- outlet -- */
+
+const OutletSection = ({ session }: { session: Session }) => {
+  // Fetch the full row: the session only carries the address as one line.
+  const q = useAsync(() => api.outlets().then((all) => all.find((o) => o.id === session.outletId) ?? null), [session.outletId]);
+  const [form, setForm] = useState<{
+    name: string; gstin: string; line1: string; line2: string; city: string; state: string; pincode: string; invoicePrefix: string;
+  } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const o = q.data;
+  useEffect(() => {
+    if (o && form === null) {
+      setForm({
+        name: o.name,
+        gstin: o.gstin ?? "",
+        line1: o.address?.line1 === "-" ? "" : (o.address?.line1 ?? ""),
+        line2: o.address?.line2 ?? "",
+        city: o.address?.city === "-" ? "" : (o.address?.city ?? ""),
+        state: o.address?.state === "-" ? "" : (o.address?.state ?? ""),
+        pincode: o.address?.pincode === "-" ? "" : (o.address?.pincode ?? ""),
+        invoicePrefix: o.invoicePrefix ?? "INV",
+      });
+    }
+  }, [o, form]);
+
+  const save = async () => {
+    if (!form || !o) return;
+    setBusy(true);
+    try {
+      const updated = await api.patchOutlet(o.id, {
+        name: form.name.trim(),
+        gstin: form.gstin.trim() || null,
+        address: {
+          line1: form.line1.trim() || "-",
+          ...(form.line2.trim() ? { line2: form.line2.trim() } : {}),
+          city: form.city.trim() || "-",
+          state: form.state.trim() || "-",
+          pincode: form.pincode.trim() || "-",
+          country: o.address?.country ?? "IN",
+        },
+        invoicePrefix: form.invoicePrefix.trim().toUpperCase() || "INV",
+      });
+      // Bills print the header from the session — keep it current.
+      patchSession(outletPatch(updated));
+      toast("Outlet details saved");
+      q.reload();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Could not save");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const set = (k: keyof NonNullable<typeof form>) => (e: { target: { value: string } }) =>
+    setForm((f) => (f ? { ...f, [k]: e.target.value } : f));
+
+  return (
+    <Section
+      title="Outlet"
+      hint={
+        session.menuMode === "own"
+          ? "This outlet has its own menu."
+          : session.outlets.length > 1
+            ? "Shares the brand menu with your other outlets."
+            : "Name, GSTIN and address as printed on every bill."
+      }
+    >
+      {!form ? (
+        <p className="text-[13px] text-[var(--fg-muted)]">{q.error ?? "Loading…"}</p>
+      ) : (
+        <form
+          className="grid gap-4 sm:grid-cols-2"
+          onSubmit={(e) => { e.preventDefault(); void save(); }}
+        >
+          <Field label="Outlet name"><Input required value={form.name} onChange={set("name")} className="h-11" /></Field>
+          <Field label="GSTIN"><Input value={form.gstin} onChange={set("gstin")} placeholder="29ABCDE1234F1Z5" maxLength={15} className="h-11 font-mono uppercase" /></Field>
+          <Field label="Address line 1"><Input value={form.line1} onChange={set("line1")} className="h-11" /></Field>
+          <Field label="Address line 2"><Input value={form.line2} onChange={set("line2")} className="h-11" /></Field>
+          <Field label="City"><Input value={form.city} onChange={set("city")} className="h-11" /></Field>
+          <Field label="State"><Input value={form.state} onChange={set("state")} className="h-11" /></Field>
+          <Field label="PIN code"><Input value={form.pincode} onChange={set("pincode")} inputMode="numeric" className="h-11" /></Field>
+          <Field label="Invoice prefix"><Input value={form.invoicePrefix} onChange={set("invoicePrefix")} maxLength={8} className="h-11 font-mono uppercase" /></Field>
+          <Button type="submit" size="lg" disabled={busy} className="sm:col-span-2 sm:w-auto sm:justify-self-start">
+            {busy ? <Loader2 size={16} className="animate-spin" /> : null} Save
+          </Button>
+        </form>
+      )}
+    </Section>
+  );
+};
+
+type SettingsTab = "outlet" | "tables" | "printing" | "staff";
 
 const TABS: { key: SettingsTab; label: string }[] = [
+  { key: "outlet", label: "Outlet" },
   { key: "tables", label: "Tables" },
   { key: "printing", label: "Printing" },
   { key: "staff", label: "Staff" },
 ];
 
 export const SettingsRoute = ({ session }: { session: Session }) => {
-  const [tab, setTab] = useState<SettingsTab>("tables");
+  const [tab, setTab] = useState<SettingsTab>("outlet");
   // One tables query for both sections — the QR grid must never lag behind
   // the list the owner just edited.
   const tablesQ = useAsync(() => api.tables(session.outletId), [session.outletId]);
@@ -90,6 +183,7 @@ export const SettingsRoute = ({ session }: { session: Session }) => {
         ))}
       </nav>
 
+      {tab === "outlet" ? <OutletSection key={session.outletId} session={session} /> : null}
       {tab === "tables" ? (
         <>
           <TablesSection session={session} q={tablesQ} />
@@ -351,9 +445,9 @@ const PrinterSection = ({ session }: { session: Session }) => {
 
 /* ----------------------------------------------------------------- staff -- */
 
-const ROLES = ["captain", "cashier", "manager", "owner"];
+const ROLES = ["captain", "cashier", "kitchen", "manager", "owner"];
 
-const BLANK_MEMBER = { fullName: "", email: "", password: "", role: "captain" };
+const BLANK_MEMBER = { fullName: "", email: "", password: "", role: "captain", outletId: "" };
 
 const StaffSection = ({ session }: { session: Session }) => {
   const q = useAsync(() => api.staff(), []);
@@ -379,7 +473,14 @@ const StaffSection = ({ session }: { session: Session }) => {
   const add = async () => {
     setBusy(true);
     try {
-      await api.addStaff(form);
+      const pinned = form.role !== "owner" && form.role !== "manager";
+      await api.addStaff({
+        fullName: form.fullName,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        ...(pinned ? { outletId: form.outletId } : {}),
+      });
       setOpen(false);
       q.reload();
       toast(`${form.fullName} can now sign in`);
@@ -403,7 +504,7 @@ const StaffSection = ({ session }: { session: Session }) => {
               <span className="min-w-0">
                 <span className="block text-[14px] font-medium truncate">{s.fullName}</span>
                 <span className="block text-[12px] text-[var(--fg-tertiary)] truncate">
-                  {s.email}
+                  {s.email}{s.outletName ? ` · ${s.outletName}` : session.outlets.length > 1 ? " · all outlets" : ""}
                 </span>
               </span>
               <span className="flex items-center gap-1">
@@ -435,7 +536,7 @@ const StaffSection = ({ session }: { session: Session }) => {
           size="lg"
           className="w-full sm:w-auto"
           onClick={() => {
-            setForm(BLANK_MEMBER);
+            setForm({ ...BLANK_MEMBER, outletId: session.outletId });
             setOpen(true);
           }}
         >
@@ -501,6 +602,23 @@ const StaffSection = ({ session }: { session: Session }) => {
                   ))}
                 </select>
               </Field>
+              {form.role !== "owner" && form.role !== "manager" ? (
+                <Field label="Works at">
+                  <select
+                    value={form.outletId}
+                    onChange={(e) => setForm({ ...form, outletId: e.target.value })}
+                    className="h-11 w-full px-3 text-[14px] rounded-[var(--radius-2)]
+                               bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
+                               focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                  >
+                    {session.outlets.map((o) => (
+                      <option key={o.id} value={o.id}>{o.name}</option>
+                    ))}
+                  </select>
+                </Field>
+              ) : (
+                <p className="self-end pb-3 text-[12px] text-[var(--fg-tertiary)]">Sees every outlet.</p>
+              )}
               <Button type="submit" size="lg" disabled={busy} className="sm:col-span-2">
                 {busy ? <Loader2 size={16} className="animate-spin" /> : null} Add member
               </Button>

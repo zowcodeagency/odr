@@ -62,17 +62,20 @@ export async function subscriptionEndOf(tenantId: string): Promise<string | null
 }
 
 /**
- * Live role of a user in a tenant, or null when the membership is gone.
- * Long-lived tokens make this the revocation point: remove the staff row and
- * the next request 401s, no token blacklist needed.
+ * Live membership of a user in a tenant, or null when it is gone. Long-lived
+ * tokens make this the revocation point: remove the staff row and the next
+ * request 401s. outletId NULL = every outlet (owner / manager).
  */
-export async function membershipRoleOf(tenantId: string, userId: string): Promise<string | null> {
+export async function membershipOf(
+  tenantId: string,
+  userId: string,
+): Promise<{ role: string; outletId: string | null } | null> {
   const rows = await db
-    .select({ role: memberships.role })
+    .select({ role: memberships.role, outletId: memberships.outletId })
     .from(memberships)
     .where(and(eq(memberships.tenantId, tenantId), eq(memberships.userId, userId)))
     .limit(1);
-  return rows[0]?.role ?? null;
+  return rows[0] ?? null;
 }
 
 export async function withTenant<T>(tenantId: string, fn: (tx: DB) => Promise<T>): Promise<T> {

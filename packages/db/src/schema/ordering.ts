@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, numeric, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, integer, numeric, jsonb, index, uniqueIndex, foreignKey } from "drizzle-orm/pg-core";
 import { tenants } from "./tenants.ts";
 import { outlets } from "./outlets.ts";
 
@@ -12,7 +12,10 @@ export const tables = pgTable(
     label: text("label").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("tables_outlet_label_unique").on(t.outletId, t.label)],
+  (t) => [
+    uniqueIndex("tables_outlet_label_unique").on(t.outletId, t.label),
+    foreignKey({ columns: [t.outletId, t.tenantId], foreignColumns: [outlets.id, outlets.tenantId], name: "tables_outlet_tenant_fk" }),
+  ],
 );
 
 export const orders = pgTable(
@@ -31,7 +34,10 @@ export const orders = pgTable(
     kotFiredAt: timestamp("kot_fired_at", { withTimezone: true }),
     settledAt: timestamp("settled_at", { withTimezone: true }),
   },
-  (t) => [index("orders_open_idx").on(t.outletId, t.state)],
+  (t) => [
+    index("orders_open_idx").on(t.outletId, t.state),
+    foreignKey({ columns: [t.outletId, t.tenantId], foreignColumns: [outlets.id, outlets.tenantId], name: "orders_outlet_tenant_fk" }),
+  ],
 );
 
 export const orderLines = pgTable(
@@ -68,7 +74,10 @@ export const kots = pgTable(
     firedAt: timestamp("fired_at", { withTimezone: true }).notNull().defaultNow(),
     doneAt: timestamp("done_at", { withTimezone: true }),
   },
-  (t) => [index("kots_pending_idx").on(t.outletId, t.doneAt)],
+  (t) => [
+    index("kots_pending_idx").on(t.outletId, t.doneAt),
+    foreignKey({ columns: [t.outletId, t.tenantId], foreignColumns: [outlets.id, outlets.tenantId], name: "kots_outlet_tenant_fk" }),
+  ],
 );
 
 export type TableRow = typeof tables.$inferSelect;

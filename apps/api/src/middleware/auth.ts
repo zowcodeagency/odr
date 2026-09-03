@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from "hono";
 import { verifyAccessToken } from "@odr/auth";
-import { membershipRoleOf, subscriptionEndOf } from "@odr/db";
+import { membershipOf, subscriptionEndOf } from "@odr/db";
 import { DomainError, UnauthorizedError, asTenantId, asUserId } from "@odr/shared";
 import { runWithContext } from "@odr/tenancy";
 import { isExpired } from "../modules/admin/domain.ts";
@@ -17,9 +17,9 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
   });
 
   // Tokens live 30 days, so the membership row is the source of truth:
-  // removed staff 401 on their next request, role changes apply immediately.
-  const role = await membershipRoleOf(claims.tid, claims.sub);
-  if (!role) throw new UnauthorizedError("membership revoked");
+  // removed staff 401 on their next request, role and outlet changes apply immediately.
+  const m = await membershipOf(claims.tid, claims.sub);
+  if (!m) throw new UnauthorizedError("membership revoked");
 
   // Subscription gate — null end date means the tenant isn't enforced.
   if (isExpired(await subscriptionEndOf(claims.tid))) {
@@ -27,7 +27,12 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
   }
 
   return runWithContext(
-    { tenantId: asTenantId(claims.tid), userId: asUserId(claims.sub), role: role as typeof claims.role },
+    {
+      tenantId: asTenantId(claims.tid),
+      userId: asUserId(claims.sub),
+      role: m.role as typeof claims.role,
+      ...(m.outletId ? { outletId: m.outletId } : {}),
+    },
     () => next(),
   );
 };

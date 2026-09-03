@@ -1,5 +1,5 @@
 import { can, hashPassword, verifyPassword, issueAccessToken, type Role } from "@odr/auth";
-import { ConflictError, DomainError, ForbiddenError, NotFoundError, UnauthorizedError } from "@odr/shared";
+import { ConflictError, DomainError, ForbiddenError, NotFoundError, UnauthorizedError, ValidationError } from "@odr/shared";
 import { getContext } from "@odr/tenancy";
 import { isExpired } from "../admin/domain.ts";
 import type { IdentityRepo } from "./ports.ts";
@@ -64,11 +64,20 @@ export const makeIdentityService = ({ repo, jwtSecret }: IdentityServiceDeps) =>
   /**
    * Adds a staff member to the caller's tenant. An email that already has an
    * account is re-used (people work at two restaurants) — only the membership
-   * is created.
+   * is created. Owners and managers see every outlet; everyone else is pinned
+   * to exactly one.
    */
-  async createStaff(input: { email: string; password: string; fullName: string; role: Role }) {
+  async createStaff(input: { email: string; password: string; fullName: string; role: Role; outletId?: string }) {
     const ctx = getContext();
     if (!can(ctx.role, "user:write")) throw new ForbiddenError("cannot write staff");
+
+    const unpinned = input.role === "owner" || input.role === "manager";
+    let outletId: string | null = null;
+    if (!unpinned) {
+      if (!input.outletId) throw new ValidationError("this role must be assigned to an outlet", { role: input.role });
+      if (!(await repo.outletExists(ctx.tenantId, input.outletId))) throw new NotFoundError("outlet", input.outletId);
+      outletId = input.outletId;
+    }
 
     const existing = await repo.findUserByEmail(input.email);
     const user = existing ?? (await repo.createUser({
@@ -79,8 +88,8 @@ export const makeIdentityService = ({ repo, jwtSecret }: IdentityServiceDeps) =>
     if (existing && (await repo.listMemberships(user.id)).some((m) => m.tenantId === ctx.tenantId)) {
       throw new ConflictError("already a staff member", { email: input.email });
     }
-    await repo.addMembership(ctx.tenantId, user.id, input.role);
-    return { id: user.id, email: user.email, fullName: user.fullName, role: input.role };
+    await repo.addMembership(ctx.tenantId, user.id, input.role, outletId);
+    return { id: user.id, email: user.email, fullName: user.fullName, role: input.role, outletId };
   },
 
   /**

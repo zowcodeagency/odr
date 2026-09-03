@@ -1,6 +1,6 @@
 import { and, eq, isNull, or, sql, type SQL } from "drizzle-orm";
 import type { DB } from "@odr/db";
-import { menuCategories, menuItems, outlets } from "@odr/db/schema";
+import { menuCategories, menuItems, menuItemSoldout, outlets } from "@odr/db/schema";
 import { NotFoundError } from "@odr/shared";
 import type { MenuRepo } from "./ports.ts";
 
@@ -29,13 +29,16 @@ const imagePatch = (image?: { data: string; type: string } | null) =>
     : { imageB64: image?.data ?? null, imageType: image?.type ?? null };
 
 export const drizzleMenuRepo = (db: DB): MenuRepo => ({
-  async listCategories(tenantId, outletId) {
-    // outletId provided: master (NULL) ∪ this outlet's overrides.
-    // outletId omitted:  every row (admin/management view).
-    const where: SQL = outletId
-      ? and(eq(menuCategories.tenantId, tenantId), or(isNull(menuCategories.outletId), eq(menuCategories.outletId, outletId))!)!
-      : eq(menuCategories.tenantId, tenantId);
-    return db.select().from(menuCategories).where(where);
+  async listCategories(tenantId, outletId, mode) {
+    const clauses: SQL[] = [eq(menuCategories.tenantId, tenantId)];
+    if (outletId) {
+      clauses.push(
+        mode === "own"
+          ? eq(menuCategories.outletId, outletId)
+          : or(isNull(menuCategories.outletId), eq(menuCategories.outletId, outletId))!,
+      );
+    }
+    return db.select().from(menuCategories).where(and(...clauses)!);
   },
 
   async createCategory(tenantId, input) {
@@ -70,10 +73,16 @@ export const drizzleMenuRepo = (db: DB): MenuRepo => ({
     if (!rows[0]) throw new NotFoundError("category", id);
   },
 
-  async listItems(tenantId, { categoryId, outletId }) {
+  async listItems(tenantId, { categoryId, outletId, mode }) {
     const clauses: SQL[] = [eq(menuItems.tenantId, tenantId)];
     if (categoryId) clauses.push(eq(menuItems.categoryId, categoryId));
-    if (outletId) clauses.push(or(isNull(menuItems.outletId), eq(menuItems.outletId, outletId))!);
+    if (outletId) {
+      clauses.push(
+        mode === "own"
+          ? eq(menuItems.outletId, outletId)
+          : or(isNull(menuItems.outletId), eq(menuItems.outletId, outletId))!,
+      );
+    }
     return db.select(itemCols).from(menuItems).where(and(...clauses)!);
   },
 
@@ -132,12 +141,30 @@ export const drizzleMenuRepo = (db: DB): MenuRepo => ({
     return row?.data && row.type ? { data: row.data, type: row.type } : null;
   },
 
-  async outletExistsInTenant(tenantId, outletId) {
+  async outletMenuMode(tenantId, outletId) {
     const rows = await db
-      .select({ id: outlets.id })
+      .select({ menuMode: outlets.menuMode })
       .from(outlets)
       .where(and(eq(outlets.tenantId, tenantId), eq(outlets.id, outletId)))
       .limit(1);
-    return rows.length > 0;
+    return rows[0]?.menuMode ?? null;
+  },
+
+  async soldOutItemIds(tenantId, outletId) {
+    const rows = await db
+      .select({ itemId: menuItemSoldout.itemId })
+      .from(menuItemSoldout)
+      .where(and(eq(menuItemSoldout.tenantId, tenantId), eq(menuItemSoldout.outletId, outletId)));
+    return new Set(rows.map((r) => r.itemId));
+  },
+
+  async setSoldOut(tenantId, outletId, itemId, soldOut) {
+    if (soldOut) {
+      await db.insert(menuItemSoldout).values({ tenantId, outletId, itemId }).onConflictDoNothing();
+    } else {
+      await db
+        .delete(menuItemSoldout)
+        .where(and(eq(menuItemSoldout.outletId, outletId), eq(menuItemSoldout.itemId, itemId)));
+    }
   },
 });

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, numeric, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, integer, numeric, jsonb, index, uniqueIndex, foreignKey } from "drizzle-orm/pg-core";
 import { tenants } from "./tenants.ts";
 import { outlets } from "./outlets.ts";
 
@@ -26,6 +26,7 @@ export const bills = pgTable(
     index("bills_tenant_idx").on(t.tenantId),
     index("bills_order_idx").on(t.orderId),
     uniqueIndex("bills_invoice_unique").on(t.outletId, t.fiscalYear, t.invoiceNumber),
+    foreignKey({ columns: [t.outletId, t.tenantId], foreignColumns: [outlets.id, outlets.tenantId], name: "bills_outlet_tenant_fk" }),
   ],
 );
 

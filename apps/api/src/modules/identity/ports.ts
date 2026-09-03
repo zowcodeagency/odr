@@ -9,7 +9,8 @@ export interface IdentityRepo {
   subscriptionEnd(tenantId: string): Promise<string | null>;
 
   listStaff(tenantId: string): Promise<StaffMember[]>;
-  addMembership(tenantId: string, userId: string, role: Role): Promise<void>;
+  addMembership(tenantId: string, userId: string, role: Role, outletId: string | null): Promise<void>;
+  outletExists(tenantId: string, outletId: string): Promise<boolean>;
   /** Revokes access to this tenant. The user account itself survives — they
    *  may still work at another restaurant, and past orders reference them. */
   removeMembership(tenantId: string, userId: string): Promise<void>;

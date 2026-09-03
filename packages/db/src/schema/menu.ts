@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, boolean, numeric, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, integer, boolean, numeric, index, primaryKey, foreignKey } from "drizzle-orm/pg-core";
 import { tenants } from "./tenants.ts";
 import { outlets } from "./outlets.ts";
 
@@ -13,7 +13,10 @@ export const menuCategories = pgTable(
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("menu_categories_tenant_idx").on(t.tenantId)],
+  (t) => [
+    index("menu_categories_tenant_idx").on(t.tenantId),
+    foreignKey({ columns: [t.outletId, t.tenantId], foreignColumns: [outlets.id, outlets.tenantId], name: "menu_categories_outlet_tenant_fk" }),
+  ],
 );
 
 export const menuItems = pgTable(
@@ -38,7 +41,11 @@ export const menuItems = pgTable(
     imageType: text("image_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("menu_items_tenant_idx").on(t.tenantId), index("menu_items_category_idx").on(t.categoryId)],
+  (t) => [
+    index("menu_items_tenant_idx").on(t.tenantId),
+    index("menu_items_category_idx").on(t.categoryId),
+    foreignKey({ columns: [t.outletId, t.tenantId], foreignColumns: [outlets.id, outlets.tenantId], name: "menu_items_outlet_tenant_fk" }),
+  ],
 );
 
 export const menuModifierGroups = pgTable("menu_modifier_groups", {
@@ -58,6 +65,22 @@ export const menuModifiers = pgTable("menu_modifiers", {
   priceDelta: numeric("price_delta", { precision: 12, scale: 2 }).notNull().default("0"),
   isActive: boolean("is_active").notNull().default(true),
 });
+
+/** Presence = "sold out at this outlet". menu_items.is_active stays the brand-wide switch. */
+export const menuItemSoldout = pgTable(
+  "menu_item_soldout",
+  {
+    tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+    outletId: uuid("outlet_id").notNull().references(() => outlets.id, { onDelete: "cascade" }),
+    itemId: uuid("item_id").notNull().references(() => menuItems.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.outletId, t.itemId] }),
+    foreignKey({ columns: [t.outletId, t.tenantId], foreignColumns: [outlets.id, outlets.tenantId], name: "menu_item_soldout_outlet_tenant_fk" }),
+  ],
+);
+
+export type MenuItemSoldout = typeof menuItemSoldout.$inferSelect;
 
 export type MenuCategory = typeof menuCategories.$inferSelect;
 export type MenuItem = typeof menuItems.$inferSelect;

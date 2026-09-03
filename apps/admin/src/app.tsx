@@ -248,6 +248,7 @@ function List({
           <thead className="text-xs text-muted">
             <tr className="border-b">
               <th className="px-5 py-2.5 font-medium">Restaurant</th>
+              <th className="px-5 py-2.5 font-medium">Outlets</th>
               <th className="px-5 py-2.5 font-medium">Ends</th>
               <th className="px-5 py-2.5 font-medium">Days left</th>
               <th className="px-5 py-2.5 font-medium">Status</th>
@@ -261,6 +262,7 @@ function List({
                 className="cursor-pointer border-b last:border-0 hover:bg-raised"
               >
                 <td className="px-5 py-3 font-medium">{r.name}</td>
+                <td className="px-5 py-3 font-mono">{r.outletCount ?? "—"}</td>
                 <td className="px-5 py-3 text-muted">{fmtDate(r.subscriptionEnd)}</td>
                 <td className="px-5 py-3 font-mono">
                   {r.daysRemaining === null || r.daysRemaining === undefined

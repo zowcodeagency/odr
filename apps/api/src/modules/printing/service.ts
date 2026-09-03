@@ -1,6 +1,6 @@
 import { DomainError, ForbiddenError, NotFoundError } from "@odr/shared";
 import { can } from "@odr/auth";
-import { getContext } from "@odr/tenancy";
+import { assertOutletScope, getContext } from "@odr/tenancy";
 import { EscPosRenderer, type Receipt } from "@odr/printing";
 import { NetworkTransport } from "@odr/printing/transport/network";
 import type { OutletsService } from "../outlets/service.ts";
@@ -60,6 +60,7 @@ export const makePrintService = ({ outlets, ordering, billing, send }: PrintServ
 
     async testPrint(outletId: string) {
       if (!can(getContext().role, "outlet:write")) throw new ForbiddenError("cannot test print");
+      assertOutletScope(outletId);
       const outlet = await outletOf(outletId);
       await deliver(outlet.id, {
         header: [{ kind: "text", text: "ODR TEST PRINT", bold: true, align: "center" }],

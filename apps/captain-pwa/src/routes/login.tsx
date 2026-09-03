@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { Button, Input, ThemeToggle } from "@odr/ui";
-import { api, needsTenant } from "../lib/api.ts";
+import { api, needsTenant, type Outlet } from "../lib/api.ts";
 import { navigate } from "../lib/router.ts";
-import { addressLine, clearSession, setSession } from "../lib/session.ts";
+import {
+  addressLine,
+  clearSession,
+  lastOutlet,
+  outletPatch,
+  pickOutlet,
+  rememberOutlet,
+  setSession,
+  type Session,
+} from "../lib/session.ts";
 import { Logo } from "../shell/logo.tsx";
 import { LoginServiceLoop } from "./login-service-loop.tsx";
 
@@ -52,8 +61,20 @@ export const LoginRoute = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [tenants, setTenants] = useState<Tenant[] | null>(null);
+  const [outlets, setOutlets] = useState<Outlet[] | null>(null);
+  const [pending, setPending] = useState<Session | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const enter = (base: Session, list: Outlet[], outlet: Outlet) => {
+    rememberOutlet(outlet.id);
+    setSession({
+      ...base,
+      ...outletPatch(outlet),
+      outlets: list.map((o) => ({ id: o.id, name: o.name })),
+    } as Session);
+    navigate({ name: "tables" });
+  };
 
   const signIn = async (tenantId?: string) => {
     setBusy(true);
@@ -65,38 +86,32 @@ export const LoginRoute = () => {
         return;
       }
       // Token must be stored before the outlet lookup — api.ts reads it.
-      setSession({
+      const base: Session = {
         token: res.token,
         userId: res.user.id,
         email: res.user.email,
         role: res.role,
         outletId: "",
         outletName: "",
+        outlets: [],
+        menuMode: "shared",
         paperWidth: 80,
         subscriptionEndsAt: res.subscriptionEndsAt,
-      });
-      const outlets = await api.outlets();
-      const outlet = outlets[0];
-      if (!outlet) {
+      };
+      setSession(base);
+      const list = (await api.outlets()).filter((o) => o.isActive);
+      if (list.length === 0) {
         clearSession();
         setError("This account has no outlet yet. Ask Odr to finish setup.");
         return;
       }
-      setSession({
-        token: res.token,
-        userId: res.user.id,
-        email: res.user.email,
-        role: res.role,
-        outletId: outlet.id,
-        outletName: outlet.name,
-        outletGstin: outlet.gstin ?? null,
-        outletAddress: addressLine(outlet.address),
-        paperWidth: outlet.paperWidth ?? 80,
-        printerIp: outlet.printerIp ?? null,
-        printerPort: outlet.printerPort ?? 9100,
-        subscriptionEndsAt: res.subscriptionEndsAt,
-      });
-      navigate({ name: "tables" });
+      const chosen = pickOutlet(list, lastOutlet());
+      if (!chosen) {
+        setPending(base);
+        setOutlets(list);
+        return;
+      }
+      enter(base, list, chosen);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Sign-in failed");
     } finally {
@@ -180,6 +195,32 @@ export const LoginRoute = () => {
             {error ? (
               <p className="mt-4 text-[13px] text-[var(--status-voided)]">{error}</p>
             ) : null}
+          </div>
+        ) : outlets && pending ? (
+          <div className="w-full max-w-[340px] mx-auto my-auto py-10">
+            <button
+              onClick={() => { clearSession(); setOutlets(null); setPending(null); }}
+              className="inline-flex items-center gap-1.5 text-[13px] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] min-h-11"
+            >
+              <ArrowLeft size={14} /> Back
+            </button>
+            <h2 className="mt-2 text-[22px] font-semibold tracking-[-0.02em]">Choose an outlet</h2>
+            <p className="mt-1.5 text-[14px] text-[var(--fg-tertiary)]">
+              You can switch any time from the top bar.
+            </p>
+            <div className="mt-6 grid gap-2">
+              {outlets.map((o) => (
+                <button
+                  key={o.id}
+                  onClick={() => enter(pending, outlets, o)}
+                  className="min-h-12 px-4 text-left rounded-[var(--radius-2)] bg-[var(--bg-canvas)]
+                             ring-1 ring-[var(--line-default)] hover:bg-[var(--bg-surface-2)]"
+                >
+                  <span className="block text-[15px] font-medium">{o.name}</span>
+                  <span className="block text-[12px] text-[var(--fg-tertiary)]">{addressLine(o.address) || o.code}</span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           <form

@@ -111,10 +111,14 @@ export interface Outlet {
     city?: string;
     state?: string;
     pincode?: string;
+    country?: string;
   };
+  invoicePrefix?: string;
   paperWidth?: number;
   printerIp?: string | null;
   printerPort?: number;
+  isActive: boolean;
+  menuMode: "shared" | "own";
 }
 
 export interface MenuCategory {
@@ -134,6 +138,7 @@ export interface MenuItem {
   isActive?: boolean;
   /** Bytes live at /public/menu-images/:id — list JSON only carries the flag. */
   hasImage?: boolean;
+  soldOutHere?: boolean;
 }
 
 /** Dish photo payload: base64 (no data-URL prefix) + mime; null removes it. */
@@ -214,6 +219,7 @@ export interface Bill {
 
 export interface BillSummary {
   id: string;
+  outletId: string;
   orderId: string;
   invoiceNumber: string;
   currency: "INR" | "SAR" | "AED" | "USD";
@@ -228,6 +234,8 @@ export interface Staff {
   email: string;
   fullName: string;
   role: string;
+  outletId: string | null;
+  outletName: string | null;
 }
 
 export interface Table {
@@ -290,8 +298,16 @@ export const api = {
   outlets: () => get<{ outlets: Outlet[] }>("/api/v1/outlets").then((r) => r.outlets),
   patchOutlet: (
     id: string,
-    patch: { paperWidth?: number; printerIp?: string | null; printerPort?: number },
-  ) => send<{ outlet: Outlet }>("PATCH", `/api/v1/outlets/${id}`, patch),
+    patch: {
+      paperWidth?: number;
+      printerIp?: string | null;
+      printerPort?: number;
+      name?: string;
+      gstin?: string | null;
+      address?: { line1: string; line2?: string; city: string; state: string; pincode: string; country: string };
+      invoicePrefix?: string;
+    },
+  ) => send<{ outlet: Outlet }>("PATCH", `/api/v1/outlets/${id}`, patch).then((r) => r.outlet),
   qrToken: (outletId: string) =>
     send<{ publicToken: string }>("POST", `/api/v1/outlets/${outletId}/qr-token`, {}),
 
@@ -302,7 +318,7 @@ export const api = {
   deleteTable: (id: string) => send<null>("DELETE", `/api/v1/tables/${id}`),
 
   staff: () => get<{ staff: Staff[] }>("/api/v1/staff").then((r) => r.staff),
-  addStaff: (input: { email: string; password: string; fullName: string; role: string }) =>
+  addStaff: (input: { email: string; password: string; fullName: string; role: string; outletId?: string }) =>
     send<{ staff: Staff }>("POST", "/api/v1/staff", input),
   removeStaff: (id: string) => send<null>("DELETE", `/api/v1/staff/${id}`),
 
@@ -345,6 +361,9 @@ export const api = {
     },
   ) => send<{ item: MenuItem }>("PATCH", `/api/v1/menu/items/${id}`, patch),
   deleteMenuItem: (id: string) => send<null>("DELETE", `/api/v1/menu/items/${id}`),
+  /** The daily 86 — sold out at this outlet only. */
+  setSoldOut: (itemId: string, outletId: string, soldOut: boolean) =>
+    send<{ item: MenuItem }>("PUT", `/api/v1/menu/items/${itemId}/soldout`, { outletId, soldOut }).then((r) => r.item),
 
   openOrders: (outletId: string) =>
     get<{ orders: (Partial<OpenOrder> & Partial<Order>)[] }>(
@@ -393,11 +412,15 @@ export const api = {
 
   createBill: (orderId: string, customer?: { customerName?: string; customerPhone?: string }) =>
     send<{ bill: Bill }>("POST", "/api/v1/billing/bills", { orderId, ...customer }).then((r) => r.bill),
-  bills: (outletId: string, from?: string, to?: string) =>
+  /** null outlet = every outlet the login may see (owner / manager). */
+  bills: (outletId: string | null, from?: string, to?: string) =>
     get<{ bills: BillSummary[] }>(
-      `/api/v1/billing/bills?outletId=${outletId}` +
-        (from ? `&from=${encodeURIComponent(from)}` : "") +
-        (to ? `&to=${encodeURIComponent(to)}` : ""),
+      `/api/v1/billing/bills?` +
+        [
+          outletId ? `outletId=${outletId}` : "",
+          from ? `from=${encodeURIComponent(from)}` : "",
+          to ? `to=${encodeURIComponent(to)}` : "",
+        ].filter(Boolean).join("&"),
     ).then((r) => r.bills),
   bill: (id: string) => get<{ bill: Bill }>(`/api/v1/billing/bills/${id}`).then((r) => r.bill),
 

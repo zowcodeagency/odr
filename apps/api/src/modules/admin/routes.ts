@@ -25,25 +25,46 @@ const topupSchema = z.object({
   note: z.string().optional(),
 });
 
-const importSchema = z.union([
-  z.object({
-    categories: z.array(
-      z.object({
-        name: z.string().min(1),
-        items: z.array(
-          z.object({
-            name: z.string().min(1),
-            price: z.union([z.number(), z.string()]),
-            taxClass: z.string().optional(),
-            isVeg: z.boolean().optional(),
-            description: z.string().optional(),
-          }),
-        ),
-      }),
-    ),
-  }),
-  z.object({ csv: z.string().min(1) }),
-]);
+const addressSchema = z.object({
+  line1: z.string().min(1),
+  line2: z.string().optional(),
+  city: z.string().min(1),
+  state: z.string().min(1),
+  pincode: z.string().min(3),
+  country: z.string().length(2),
+});
+
+const createOutletSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  gstin: z.string().length(15).optional(),
+  address: addressSchema,
+  invoicePrefix: z.string().trim().min(1).max(8).optional(),
+  menuMode: z.enum(["shared", "own"]),
+});
+
+const patchOutletSchema = z.object({ isActive: z.boolean() });
+
+const importSchema = z
+  .union([
+    z.object({
+      categories: z.array(
+        z.object({
+          name: z.string().min(1),
+          items: z.array(
+            z.object({
+              name: z.string().min(1),
+              price: z.union([z.number(), z.string()]),
+              taxClass: z.string().optional(),
+              isVeg: z.boolean().optional(),
+              description: z.string().optional(),
+            }),
+          ),
+        }),
+      ),
+    }),
+    z.object({ csv: z.string().min(1) }),
+  ])
+  .and(z.object({ outletId: z.string().uuid().optional() }));
 
 const parse = <S extends z.ZodTypeAny>(s: S, body: unknown): z.infer<S> => {
   const r = s.safeParse(body);
@@ -100,10 +121,23 @@ export const buildAdminRoutes = (svc: AdminService) => {
   r.get("/restaurants/:tenantId/topups", async (c) =>
     c.json({ topups: await svc.listTopups(c.req.param("tenantId")) }));
 
+  r.get("/restaurants/:tenantId/outlets", async (c) =>
+    c.json({ outlets: await svc.listOutlets(c.req.param("tenantId")) }));
+
+  r.post("/restaurants/:tenantId/outlets", async (c) => {
+    const body = parse(createOutletSchema, await c.req.json());
+    return c.json(await svc.createOutlet(c.req.param("tenantId"), body), 201);
+  });
+
+  r.patch("/restaurants/:tenantId/outlets/:outletId", async (c) => {
+    const body = parse(patchOutletSchema, await c.req.json());
+    return c.json(await svc.setOutletActive(c.req.param("tenantId"), c.req.param("outletId"), body.isActive));
+  });
+
   r.post("/restaurants/:tenantId/menu/import", async (c) => {
     const body = parse(importSchema, await c.req.json());
     const categories = "csv" in body ? parseCsvMenu(body.csv) : parseJsonMenu(body.categories);
-    return c.json(await svc.importMenu(c.req.param("tenantId"), categories), 201);
+    return c.json(await svc.importMenu(c.req.param("tenantId"), categories, body.outletId), 201);
   });
 
   return r;

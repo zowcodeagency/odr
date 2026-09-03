@@ -53,12 +53,14 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
   },
 
   async list(tenantId, { outletId, from, to, limit }) {
-    const clauses = [eq(bills.tenantId, tenantId), eq(bills.outletId, outletId)];
+    const clauses = [eq(bills.tenantId, tenantId)];
+    if (outletId) clauses.push(eq(bills.outletId, outletId));
     if (from) clauses.push(gte(bills.settledAt, new Date(from)));
     if (to) clauses.push(lte(bills.settledAt, new Date(to)));
     const rows = await db
       .select({
         id: bills.id,
+        outletId: bills.outletId,
         orderId: bills.orderId,
         invoiceNumber: bills.invoiceNumber,
         currency: bills.currency,

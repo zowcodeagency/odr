@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { DB } from "@odr/db";
 import { tenants, topups, outlets, users, memberships } from "@odr/db/schema";
 import type { AdminRepo, TenantRow, TopupRow } from "./ports.ts";
@@ -10,6 +10,7 @@ const tenantCols = {
   subscriptionStart: tenants.subscriptionStart,
   subscriptionEnd: tenants.subscriptionEnd,
   createdAt: tenants.createdAt,
+  outletCount: sql<number>`(select count(*)::int from ${outlets} o where o.tenant_id = ${tenants.id})`,
 };
 
 const toTenant = (r: {
@@ -19,6 +20,7 @@ const toTenant = (r: {
   subscriptionStart: string | null;
   subscriptionEnd: string | null;
   createdAt: Date;
+  outletCount: number;
 }): TenantRow => ({ ...r, createdAt: r.createdAt.toISOString() });
 
 const toTopup = (r: {
@@ -55,21 +57,46 @@ export const drizzleAdminRepo = (db: DB): AdminRepo => ({
     await db.update(tenants).set({ subscriptionEnd: end }).where(eq(tenants.id, tenantId));
   },
 
-  async createOutlet({ tenantId, name, code, gstin, invoicePrefix }) {
+  async listOutlets(tenantId) {
+    const rows = await db.select().from(outlets).where(eq(outlets.tenantId, tenantId)).orderBy(outlets.createdAt);
+    return rows.map((o) => ({
+      id: o.id,
+      name: o.name,
+      code: o.code,
+      gstin: o.gstin,
+      city: o.address.city,
+      invoicePrefix: o.invoicePrefix,
+      isActive: o.isActive,
+      menuMode: o.menuMode,
+      createdAt: o.createdAt.toISOString(),
+    }));
+  },
+
+  async outletCodeExists(tenantId, code) {
+    const rows = await db
+      .select({ id: outlets.id })
+      .from(outlets)
+      .where(and(eq(outlets.tenantId, tenantId), eq(outlets.code, code)))
+      .limit(1);
+    return rows.length > 0;
+  },
+
+  async createOutlet({ tenantId, name, code, gstin, address, invoicePrefix, menuMode }) {
     const [o] = await db
       .insert(outlets)
-      .values({
-        tenantId,
-        name,
-        code,
-        gstin,
-        // ponytail: the team fills the real address in later via /api/v1/outlets.
-        address: { line1: "-", city: "-", state: "-", pincode: "-", country: "IN" },
-        invoicePrefix,
-      })
+      .values({ tenantId, name, code, gstin, address, invoicePrefix, menuMode })
       .returning({ id: outlets.id });
     if (!o) throw new Error("failed to insert outlet");
     return o;
+  },
+
+  async setOutletActive(tenantId, outletId, isActive) {
+    const rows = await db
+      .update(outlets)
+      .set({ isActive })
+      .where(and(eq(outlets.tenantId, tenantId), eq(outlets.id, outletId)))
+      .returning({ id: outlets.id });
+    return rows.length > 0;
   },
 
   async upsertOwner({ email, passwordHash, fullName }) {

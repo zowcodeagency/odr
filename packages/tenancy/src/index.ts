@@ -1,10 +1,12 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { TenantId, UserId } from "@odr/shared";
+import { ForbiddenError } from "@odr/shared";
 
 export type RequestContext = {
   tenantId: TenantId;
   userId: UserId;
   role: "owner" | "manager" | "captain" | "cashier" | "kitchen";
+  /** Membership pin. undefined = every outlet in the tenant (owner / manager). */
   outletId?: string;
 };
 
@@ -20,3 +22,12 @@ export const getContext = (): RequestContext => {
 };
 
 export const getContextOrNull = (): RequestContext | undefined => als.getStore();
+
+/**
+ * Pinned staff (membership.outlet_id set) may only touch that outlet.
+ * Owners and managers carry no outletId in context and pass for every outlet.
+ */
+export const assertOutletScope = (outletId: string): void => {
+  const pinned = getContext().outletId;
+  if (pinned && pinned !== outletId) throw new ForbiddenError("outlet out of scope");
+};

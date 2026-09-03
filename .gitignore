@@ -11,3 +11,6 @@ coverage
 .env.production
 output
 tmp
+
+# Claude Code worktrees
+.claude/worktrees/

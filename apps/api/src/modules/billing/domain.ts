@@ -42,6 +42,7 @@ export type Bill = {
 /** Row shape for the invoice list — no lines, so one query serves the page. */
 export type BillSummary = {
   id: string;
+  outletId: string;
   orderId: string;
   invoiceNumber: string;
   currency: Currency;

@@ -1,7 +1,7 @@
-import { ForbiddenError, NotFoundError, ValidationError, newId } from "@odr/shared";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError, newId } from "@odr/shared";
 import { can } from "@odr/auth";
 import type { EventBus } from "@odr/events";
-import { getContext } from "@odr/tenancy";
+import { assertOutletScope, getContext } from "@odr/tenancy";
 import type { OrderRepo, KotView } from "./ports.ts";
 import {
   assertTransition,
@@ -12,12 +12,26 @@ import {
   type OrderLine,
 } from "./domain.ts";
 
-export type OrderingServiceDeps = { repo: OrderRepo; events: EventBus };
+export type OrderingServiceDeps = {
+  repo: OrderRepo;
+  events: EventBus;
+  /** Closed branches refuse new orders. Defaults to "open" so tests and the diner path need no lookup. */
+  outletActive?: (tenantId: string, outletId: string) => Promise<boolean>;
+};
 
 const emit = async (events: EventBus, name: string, tenantId: string, payload: unknown) =>
   events.publish({ name, tenantId, occurredAt: new Date().toISOString(), payload });
 
-export const makeOrderingService = ({ repo, events }: OrderingServiceDeps) => ({
+export const makeOrderingService = ({ repo, events, outletActive }: OrderingServiceDeps) => {
+  /** Fetch an order and refuse it to staff pinned elsewhere — every id-keyed action goes through here. */
+  const load = async (tenantId: string, orderId: string): Promise<Order> => {
+    const order = await repo.byId(tenantId, orderId);
+    if (!order) throw new NotFoundError("order", orderId);
+    assertOutletScope(order.outletId);
+    return order;
+  };
+
+  return {
   async openTable(input: {
     outletId: string;
     tableLabel?: string | null;
@@ -27,6 +41,10 @@ export const makeOrderingService = ({ repo, events }: OrderingServiceDeps) => ({
   }): Promise<Order> {
     const ctx = getContext();
     if (!can(ctx.role, "order:create")) throw new ForbiddenError("cannot open orders");
+    assertOutletScope(input.outletId);
+    if (outletActive && !(await outletActive(ctx.tenantId, input.outletId))) {
+      throw new ConflictError("this outlet is closed", { outletId: input.outletId });
+    }
 
     const channel = input.channel ?? "dine_in";
     if (requiresTable(channel) && !input.tableLabel) {
@@ -55,8 +73,7 @@ export const makeOrderingService = ({ repo, events }: OrderingServiceDeps) => ({
     const ctx = getContext();
     if (!can(ctx.role, "order:create")) throw new ForbiddenError("cannot add items");
 
-    const order = await repo.byId(ctx.tenantId, input.orderId);
-    if (!order) throw new NotFoundError("order", input.orderId);
+    const order = await load(ctx.tenantId, input.orderId);
 
     assertTransition(order.state, "items_added");
     const newLines: OrderLine[] = input.lines.map((l) => ({ ...l, id: newId() }));
@@ -72,8 +89,7 @@ export const makeOrderingService = ({ repo, events }: OrderingServiceDeps) => ({
     const ctx = getContext();
     if (!can(ctx.role, "order:fire-kot")) throw new ForbiddenError("cannot fire KOT");
 
-    const order = await repo.byId(ctx.tenantId, input.orderId);
-    if (!order) throw new NotFoundError("order", input.orderId);
+    const order = await load(ctx.tenantId, input.orderId);
 
     assertTransition(order.state, "kot_fired");
     const fired = new Set(order.kots.flatMap((k) => k.lineIds));
@@ -96,8 +112,7 @@ export const makeOrderingService = ({ repo, events }: OrderingServiceDeps) => ({
     const ctx = getContext();
     if (!can(ctx.role, "billing:settle")) throw new ForbiddenError("cannot settle");
 
-    const order = await repo.byId(ctx.tenantId, input.orderId);
-    if (!order) throw new NotFoundError("order", input.orderId);
+    const order = await load(ctx.tenantId, input.orderId);
 
     assertTransition(order.state, "settled");
     order.state = "settled";
@@ -112,8 +127,7 @@ export const makeOrderingService = ({ repo, events }: OrderingServiceDeps) => ({
     const ctx = getContext();
     if (!can(ctx.role, "order:void")) throw new ForbiddenError("cannot void orders");
 
-    const order = await repo.byId(ctx.tenantId, input.orderId);
-    if (!order) throw new NotFoundError("order", input.orderId);
+    const order = await load(ctx.tenantId, input.orderId);
 
     assertTransition(order.state, "voided");
     order.state = "voided";
@@ -126,16 +140,38 @@ export const makeOrderingService = ({ repo, events }: OrderingServiceDeps) => ({
   async kotDone(input: { kotId: string }): Promise<KotView> {
     const ctx = getContext();
     if (!can(ctx.role, "order:read")) throw new ForbiddenError("cannot bump KOTs");
-    const kot = await repo.markKotDone(ctx.tenantId, input.kotId);
+    const kot = await repo.kotById(ctx.tenantId, input.kotId);
     if (!kot) throw new NotFoundError("kot", input.kotId);
-    await emit(events, "order.kot_done", ctx.tenantId, { kotId: kot.id, orderId: kot.orderId });
-    return kot;
+    await load(ctx.tenantId, kot.orderId);
+    const done = await repo.markKotDone(ctx.tenantId, input.kotId);
+    if (!done) throw new NotFoundError("kot", input.kotId);
+    await emit(events, "order.kot_done", ctx.tenantId, { kotId: done.id, orderId: done.orderId });
+    return done;
   },
 
-  listOpen: (outletId: string) => repo.listOpen(getContext().tenantId, outletId),
-  byId: (id: string) => repo.byId(getContext().tenantId, id),
-  listPendingKots: (outletId: string) => repo.listPendingKots(getContext().tenantId, outletId),
-  kotById: (kotId: string) => repo.kotById(getContext().tenantId, kotId),
-});
+  async listOpen(outletId: string) {
+    assertOutletScope(outletId);
+    return repo.listOpen(getContext().tenantId, outletId);
+  },
+  async byId(id: string): Promise<Order | null> {
+    const ctx = getContext();
+    const order = await repo.byId(ctx.tenantId, id);
+    if (!order) return null;
+    assertOutletScope(order.outletId);
+    return order;
+  },
+  async listPendingKots(outletId: string) {
+    assertOutletScope(outletId);
+    return repo.listPendingKots(getContext().tenantId, outletId);
+  },
+  async kotById(kotId: string): Promise<KotView | null> {
+    const ctx = getContext();
+    const kot = await repo.kotById(ctx.tenantId, kotId);
+    if (!kot) return null;
+    await load(ctx.tenantId, kot.orderId);
+    return kot;
+  },
+  };
+};
 
 export type OrderingService = ReturnType<typeof makeOrderingService>;

@@ -13,20 +13,19 @@ const addressSchema = z.object({
   country: z.string().min(2).max(2),
 });
 
-const createSchema = z.object({
-  name: z.string().min(1),
-  code: z.string().min(1).max(16),
-  gstin: z.string().length(15).optional(),
-  address: addressSchema,
-  invoicePrefix: z.string().min(1).max(8).optional(),
-});
-
-const settingsSchema = z.object({
-  paperWidth: z.union([z.literal(PAPER_WIDTHS[0]), z.literal(PAPER_WIDTHS[1])]).optional(),
-  // null clears the printer (back to browser-print only).
-  printerIp: z.string().min(1).max(255).nullable().optional(),
-  printerPort: z.number().int().min(1).max(65535).optional(),
-});
+const settingsSchema = z
+  .object({
+    paperWidth: z.union([z.literal(PAPER_WIDTHS[0]), z.literal(PAPER_WIDTHS[1])]),
+    // null clears the printer (back to browser-print only).
+    printerIp: z.string().min(1).max(255).nullable(),
+    printerPort: z.number().int().min(1).max(65535),
+    name: z.string().trim().min(1).max(80),
+    gstin: z.string().trim().length(15).nullable(),
+    address: addressSchema,
+    invoicePrefix: z.string().trim().min(1).max(8),
+  })
+  .partial()
+  .refine((p) => Object.keys(p).length > 0, "nothing to update");
 
 const tablesSchema = z.object({ labels: z.array(z.string().min(1).max(32)).min(1).max(200) });
 
@@ -39,10 +38,6 @@ const parse = <S extends z.ZodTypeAny>(s: S, body: unknown): z.infer<S> => {
 export const buildOutletsRoutes = (svc: OutletsService) => {
   const r = new Hono();
   r.get("/", async (c) => c.json({ outlets: await svc.list() }));
-  r.post("/", async (c) => {
-    const body = parse(createSchema, await c.req.json());
-    return c.json({ outlet: await svc.create(body) }, 201);
-  });
 
   r.patch("/:id", async (c) => {
     const body = parse(settingsSchema, await c.req.json());

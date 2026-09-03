@@ -35,8 +35,8 @@ const fakeRepo = (initialCounter = 0) => {
       return b;
     },
     async list(_t, { outletId }) {
-      return bills.filter((b) => b.outletId === outletId).map((b) => ({
-        id: b.id, orderId: b.orderId, invoiceNumber: b.invoiceNumber, currency: b.currency,
+      return bills.filter((b) => !outletId || b.outletId === outletId).map((b) => ({
+        id: b.id, outletId: b.outletId, orderId: b.orderId, invoiceNumber: b.invoiceNumber, currency: b.currency,
         grandTotalMinor: b.grandTotalMinor, customerName: b.customerName,
         customerPhone: b.customerPhone, settledAt: b.settledAt,
       }));
@@ -214,5 +214,62 @@ test("the event auto-bills first; a later settle with a phone fills it in", asyn
     });
     expect(withPhone.id).toBe(auto.id);            // same invoice, not a second one
     expect(withPhone.customerPhone).toBe("9845012345");
+  });
+});
+
+test("idempotent settle branch also enforces outlet scope", async () => {
+  const { repo, bills } = fakeRepo();
+  const svc = makeBillingService({
+    repo,
+    events: new InMemoryEventBus(),
+    country: () => "IN",
+    orders: stubOrders([
+      sampleOrder("o-10", [{ itemId: "i-1", itemName: "Idli", qty: 1, unitPriceMinor: 5000n, taxClass: "GST_5" }]),
+    ]),
+  });
+
+  await runWithContext(ctx, async () => {
+    await svc.settleOrderToBill({ orderId: "o-10" });
+  });
+
+  await runWithContext(
+    { ...ctx, role: "cashier" as const, outletId: "44444444-4444-4444-4444-444444444444" },
+    async () => {
+      await expect(svc.settleOrderToBill({ orderId: "o-10", customerName: "Eve" })).rejects.toThrow(/out of scope/);
+    },
+  );
+
+  expect(bills.find((b) => b.orderId === "o-10")!.customerName).toBe(null);
+});
+
+test("a pinned cashier at another outlet cannot fetch a bill by id", async () => {
+  const { repo } = fakeRepo();
+  const svc = makeBillingService({
+    repo,
+    events: new InMemoryEventBus(),
+    country: () => "IN",
+    orders: stubOrders([
+      sampleOrder("o-11", [{ itemId: "i-1", itemName: "Idli", qty: 1, unitPriceMinor: 5000n, taxClass: "GST_5" }]),
+    ]),
+  });
+
+  const bill = await runWithContext(ctx, () => svc.settleOrderToBill({ orderId: "o-11" }));
+
+  await runWithContext(
+    { ...ctx, role: "cashier" as const, outletId: "44444444-4444-4444-4444-444444444444" },
+    async () => {
+      await expect(svc.byId(bill.id)).rejects.toThrow(/out of scope/);
+    },
+  );
+});
+
+test("all-outlets bill list is for unpinned roles only", async () => {
+  const svc = makeBillingService({ repo: fakeRepo().repo, events: new InMemoryEventBus(), country: () => "IN", orders: stubOrders([]) });
+  await runWithContext(ctx, async () => {
+    await expect(svc.list({})).resolves.toEqual([]);
+  });
+  await runWithContext({ ...ctx, role: "cashier" as const, outletId: OUTLET }, async () => {
+    await expect(svc.list({})).rejects.toThrow(/out of scope/);
+    await expect(svc.list({ outletId: OUTLET })).resolves.toEqual([]);
   });
 });

@@ -13,6 +13,9 @@ export interface Session {
   role: string;
   outletId: string;
   outletName: string;
+  /** Every outlet this login may work at — >1 shows the switcher. */
+  outlets: { id: string; name: string }[];
+  menuMode: "shared" | "own";
   outletGstin?: string | null;
   outletAddress?: string;
   /** 58 or 80 — drives the thermal print CSS. */
@@ -25,12 +28,17 @@ export interface Session {
 
 const KEY = "odr.session";
 
+export const LAST_OUTLET_KEY = "odr.lastOutlet";
+/** Fired on window whenever the stored session changes (login, switch, patch). */
+export const SESSION_EVENT = "odr:session";
+
 export const getSession = (): Session | null => {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
-    const s = JSON.parse(raw) as Session;
-    return s.token ? s : null;
+    // Cast as partial: sessions saved before outlets/menuMode existed lack them.
+    const s = JSON.parse(raw) as Partial<Session>;
+    return s.token ? ({ outlets: [], menuMode: "shared", ...s } as Session) : null;
   } catch {
     return null;
   }
@@ -39,6 +47,7 @@ export const getSession = (): Session | null => {
 export const setSession = (s: Session): void => {
   localStorage.setItem(KEY, JSON.stringify(s));
   localStorage.setItem("odr.token", s.token);
+  window.dispatchEvent(new Event(SESSION_EVENT));
 };
 
 export const patchSession = (patch: Partial<Session>): void => {
@@ -49,7 +58,46 @@ export const patchSession = (patch: Partial<Session>): void => {
 export const clearSession = (): void => {
   localStorage.removeItem(KEY);
   localStorage.removeItem("odr.token");
+  window.dispatchEvent(new Event(SESSION_EVENT));
 };
+
+/**
+ * Which outlet to land on. One → it. Several with the one this device used
+ * last → that. Otherwise null: show the picker.
+ */
+export const pickOutlet = <T extends { id: string }>(outlets: T[], lastId: string | null): T | null => {
+  if (outlets.length === 1) return outlets[0]!;
+  return outlets.find((o) => o.id === lastId) ?? null;
+};
+
+export const rememberOutlet = (id: string): void => {
+  try { localStorage.setItem(LAST_OUTLET_KEY, id); } catch { /* private mode */ }
+};
+
+export const lastOutlet = (): string | null => {
+  try { return localStorage.getItem(LAST_OUTLET_KEY); } catch { return null; }
+};
+
+/** Session fields that come from an outlet row — used by login and the switcher alike. */
+export const outletPatch = (o: {
+  id: string;
+  name: string;
+  gstin?: string | null;
+  address?: Parameters<typeof addressLine>[0];
+  paperWidth?: number;
+  printerIp?: string | null;
+  printerPort?: number;
+  menuMode?: "shared" | "own";
+}): Partial<Session> => ({
+  outletId: o.id,
+  outletName: o.name,
+  outletGstin: o.gstin ?? null,
+  outletAddress: addressLine(o.address),
+  paperWidth: o.paperWidth ?? 80,
+  printerIp: o.printerIp ?? null,
+  printerPort: o.printerPort ?? 9100,
+  menuMode: o.menuMode ?? "shared",
+});
 
 export const canManage = (role: string): boolean =>
   role === "owner" || role === "manager";

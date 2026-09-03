@@ -15,6 +15,8 @@ const toDomain = (r: typeof outlets.$inferSelect): Outlet => ({
   printerIp: r.printerIp,
   printerPort: r.printerPort,
   publicToken: r.publicToken,
+  isActive: r.isActive,
+  menuMode: r.menuMode,
 });
 
 export const drizzleOutletsRepo = (db: DB): OutletsRepo => {
@@ -40,22 +42,6 @@ export const drizzleOutletsRepo = (db: DB): OutletsRepo => {
     return row ? toDomain(row) : null;
   },
 
-  async create(tenantId, input) {
-    const [row] = await db
-      .insert(outlets)
-      .values({
-        tenantId,
-        name: input.name,
-        code: input.code,
-        gstin: input.gstin,
-        address: input.address,
-        invoicePrefix: input.invoicePrefix ?? "INV",
-      })
-      .returning();
-    if (!row) throw new Error("failed to insert outlet");
-    return toDomain(row);
-  },
-
   async updateSettings(tenantId, outletId, settings) {
     const [row] = await db
       .update(outlets)
@@ -63,6 +49,10 @@ export const drizzleOutletsRepo = (db: DB): OutletsRepo => {
         ...(settings.paperWidth !== undefined ? { paperWidth: settings.paperWidth } : {}),
         ...(settings.printerIp !== undefined ? { printerIp: settings.printerIp } : {}),
         ...(settings.printerPort !== undefined ? { printerPort: settings.printerPort } : {}),
+        ...(settings.name !== undefined ? { name: settings.name } : {}),
+        ...(settings.gstin !== undefined ? { gstin: settings.gstin } : {}),
+        ...(settings.address !== undefined ? { address: settings.address } : {}),
+        ...(settings.invoicePrefix !== undefined ? { invoicePrefix: settings.invoicePrefix } : {}),
       })
       .where(and(eq(outlets.tenantId, tenantId), eq(outlets.id, outletId)))
       .returning();

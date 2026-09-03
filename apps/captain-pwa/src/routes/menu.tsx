@@ -129,11 +129,12 @@ export const MenuRoute = ({ session }: { session: Session }) => {
     }
   };
 
-  // The one action that happens every day — kept to a single tap.
+  // The one action that happens every day — kept to a single tap. Per outlet:
+  // 86'ing a dish here leaves the other outlets selling it.
   const toggleSoldOut = (i: MenuItem) =>
     run(
-      () => api.updateMenuItem(i.id, { isActive: i.isActive === false }),
-      i.isActive === false ? `${i.name} is back on` : `${i.name} marked sold out`,
+      () => api.setSoldOut(i.id, outletId, !i.soldOutHere),
+      i.soldOutHere ? `${i.name} is back on` : `${i.name} marked sold out`,
     );
 
   const save = (d: Draft) =>
@@ -162,7 +163,12 @@ export const MenuRoute = ({ session }: { session: Session }) => {
         <div>
           <h1 className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.02em]">Menu</h1>
           <p className="mt-1 text-[13px] text-[var(--fg-tertiary)]">
-            {session.outletName} · changes are live for waiters and diners at once
+            {session.outletName} ·{" "}
+            {session.menuMode === "own"
+              ? "this outlet's own menu"
+              : session.outlets.length > 1
+                ? "shared brand menu · sold out is per outlet"
+                : "changes are live for waiters and diners at once"}
           </p>
         </div>
         <form
@@ -405,7 +411,7 @@ const DishRow = ({
   onEdit: () => void;
   onToggle: () => void;
 }) => {
-  const off = item.isActive === false;
+  const off = item.soldOutHere === true || item.isActive === false;
   return (
     <div className="flex items-center gap-2 pr-2">
       <button

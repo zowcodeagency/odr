@@ -85,6 +85,14 @@ export const buildMenuRoutes = (svc: MenuService) => {
     return c.json({ item: await svc.updateItem(c.req.param("id"), body) });
   });
 
+  const soldoutSchema = z.object({ outletId: z.string().uuid(), soldOut: z.boolean() });
+
+  // PUT /menu/items/:id/soldout — the daily 86, scoped to one outlet.
+  r.put("/items/:id/soldout", async (c) => {
+    const body = parse(soldoutSchema, await c.req.json());
+    return c.json({ item: await svc.setSoldOut(c.req.param("id"), body.outletId, body.soldOut) });
+  });
+
   r.delete("/items/:id", async (c) => {
     await svc.deleteItem(c.req.param("id"));
     return c.body(null, 204);

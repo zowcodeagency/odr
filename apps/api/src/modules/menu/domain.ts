@@ -24,6 +24,8 @@ export type Item = {
   sortOrder: number;
   /** Derived flag — the bytes live behind GET /public/menu-images/:id, never in list JSON. */
   hasImage: boolean;
+  /** True when this outlet has 86'd the dish. Always false when no outlet was asked. */
+  soldOutHere: boolean;
 };
 
 /** A dish photo travelling through the API: base64 bytes + mime type. */

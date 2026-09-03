@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, ApiError, tenantId, type Restaurant, type Topup } from "./api.ts";
+import { api, ApiError, tenantId, type AdminOutlet, type Restaurant, type Topup } from "./api.ts";
 import { Button, Field, Note, StatusPill, fmtDate, inputClass } from "./ui.tsx";
 
 const EXAMPLE = `{
@@ -90,10 +90,61 @@ export function Drawer({
   const [menuError, setMenuError] = useState("");
   const [menuOk, setMenuOk] = useState("");
 
+  const [outlets, setOutlets] = useState<AdminOutlet[] | null>(null);
+  const [outletError, setOutletError] = useState("");
+  const [addingOutlet, setAddingOutlet] = useState(false);
+  const [outletForm, setOutletForm] = useState({
+    name: "", gstin: "", line1: "", city: "", state: "Karnataka", pincode: "", menuMode: "shared" as "shared" | "own",
+  });
+  const [outletBusy, setOutletBusy] = useState(false);
+  const [outletOk, setOutletOk] = useState("");
+  const [importTarget, setImportTarget] = useState<string>(""); // "" = shared brand menu
+
   const fail = (err: unknown, set: (m: string) => void) => {
     if (err instanceof ApiError && err.unauthorized) return onUnauthorized();
     set(err instanceof Error ? err.message : "Something went wrong.");
   };
+
+  const loadOutlets = () => {
+    setOutletError("");
+    api.outlets(adminKey, id).then(setOutlets).catch((e: unknown) => { setOutlets([]); fail(e, setOutletError); });
+  };
+  useEffect(loadOutlets, [id]);
+
+  async function submitOutlet(e: React.FormEvent) {
+    e.preventDefault();
+    setOutletError("");
+    setOutletOk("");
+    if (!outletForm.name.trim()) return setOutletError("Outlet name is required.");
+    if (!outletForm.city.trim()) return setOutletError("City is required.");
+    setOutletBusy(true);
+    try {
+      const res = await api.createOutlet(adminKey, id, {
+        name: outletForm.name.trim(),
+        ...(outletForm.gstin.trim() ? { gstin: outletForm.gstin.trim() } : {}),
+        address: {
+          line1: outletForm.line1.trim() || "-",
+          city: outletForm.city.trim(),
+          state: outletForm.state.trim() || "-",
+          pincode: outletForm.pincode.trim() || "-",
+          country: "IN",
+        },
+        menuMode: outletForm.menuMode,
+      });
+      setOutletOk(`Outlet added with code ${res.code}. The owner can now switch to it in the app.`);
+      setOutletForm({ ...outletForm, name: "", gstin: "", line1: "", city: "", pincode: "" });
+      setAddingOutlet(false);
+      loadOutlets();
+      onChanged();
+    } catch (err) {
+      fail(err, setOutletError);
+    } finally {
+      setOutletBusy(false);
+    }
+  }
+
+  const toggleOutlet = (o: AdminOutlet) =>
+    api.setOutletActive(adminKey, id, o.id, !o.isActive).then(loadOutlets).catch((e: unknown) => fail(e, setOutletError));
 
   const loadHistory = () => {
     setHistoryError("");
@@ -152,9 +203,10 @@ export function Drawer({
 
     setMenuBusy(true);
     try {
-      const res = await api.importMenu(adminKey, id, built.body);
+      const res = await api.importMenu(adminKey, id, built.body, importTarget || undefined);
+      const items = res.itemsCreated + res.itemsUpdated;
       setMenuOk(
-        `Imported ${res.items} item${res.items === 1 ? "" : "s"} across ${res.categories} categor${res.categories === 1 ? "y" : "ies"}.`,
+        `Imported ${items} item${items === 1 ? "" : "s"} across ${res.categoriesCreated} categor${res.categoriesCreated === 1 ? "y" : "ies"}.`,
       );
       setMenuText("");
     } catch (e) {
@@ -186,6 +238,89 @@ export function Drawer({
         </header>
 
         <div className="space-y-8 px-6 py-6">
+          <section>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold">Outlets</h3>
+                <p className="mt-0.5 text-xs text-muted">Pricing is per outlet. Closed outlets keep their bills but take no orders.</p>
+              </div>
+              <Button variant="ghost" onClick={() => setAddingOutlet((v) => !v)}>
+                {addingOutlet ? "Cancel" : "Add outlet"}
+              </Button>
+            </div>
+
+            {addingOutlet ? (
+              <form onSubmit={submitOutlet} className="mt-4 space-y-3 rounded-lg border bg-surface p-4">
+                <Field label="Outlet name">
+                  <input className={inputClass} placeholder="Spice Route – Airport Road" value={outletForm.name} onChange={(e) => setOutletForm({ ...outletForm, name: e.target.value })} />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="GSTIN" hint="optional">
+                    <input className={inputClass} value={outletForm.gstin} onChange={(e) => setOutletForm({ ...outletForm, gstin: e.target.value })} />
+                  </Field>
+                  <Field label="Address line">
+                    <input className={inputClass} value={outletForm.line1} onChange={(e) => setOutletForm({ ...outletForm, line1: e.target.value })} />
+                  </Field>
+                  <Field label="City">
+                    <input className={inputClass} value={outletForm.city} onChange={(e) => setOutletForm({ ...outletForm, city: e.target.value })} />
+                  </Field>
+                  <Field label="State">
+                    <input className={inputClass} value={outletForm.state} onChange={(e) => setOutletForm({ ...outletForm, state: e.target.value })} />
+                  </Field>
+                  <Field label="PIN code">
+                    <input className={inputClass} inputMode="numeric" value={outletForm.pincode} onChange={(e) => setOutletForm({ ...outletForm, pincode: e.target.value })} />
+                  </Field>
+                </div>
+                <fieldset className="space-y-1.5">
+                  <legend className="mb-1.5 block text-xs font-medium tracking-wide text-muted">Menu</legend>
+                  {([["shared", "Share the brand menu", "One menu for every outlet. Each outlet marks its own sold-out dishes."], ["own", "Own menu", "Starts empty. Import this outlet's menu below."]] as const).map(([v, label, hint]) => (
+                    <label key={v} className="flex items-start gap-2 text-sm">
+                      <input type="radio" name="menuMode" className="mt-1" checked={outletForm.menuMode === v} onChange={() => setOutletForm({ ...outletForm, menuMode: v })} />
+                      <span><span className="font-medium">{label}</span><span className="block text-xs text-muted">{hint}</span></span>
+                    </label>
+                  ))}
+                </fieldset>
+                {outletError ? <Note kind="error">{outletError}</Note> : null}
+                <Button disabled={outletBusy}>{outletBusy ? "Adding…" : "Add outlet"}</Button>
+              </form>
+            ) : null}
+
+            {outletOk ? <div className="mt-3"><Note kind="success">{outletOk}</Note></div> : null}
+            {!addingOutlet && outletError ? <div className="mt-3"><Note kind="error">{outletError}</Note></div> : null}
+
+            <div className="mt-3 overflow-hidden rounded-lg border">
+              {outlets === null ? (
+                <p className="px-4 py-4 text-xs text-muted">Loading…</p>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="text-xs text-muted">
+                    <tr className="border-b">
+                      <th className="px-4 py-2 font-medium">Outlet</th>
+                      <th className="px-4 py-2 font-medium">Code</th>
+                      <th className="px-4 py-2 font-medium">Menu</th>
+                      <th className="px-4 py-2 font-medium"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {outlets.map((o) => (
+                      <tr key={o.id} className={`border-b last:border-0 ${o.isActive ? "" : "opacity-60"}`}>
+                        <td className="px-4 py-2.5">
+                          <span className="block font-medium">{o.name}</span>
+                          <span className="block text-xs text-muted">{o.city === "-" ? "address pending" : o.city}{o.gstin ? ` · ${o.gstin}` : ""}</span>
+                        </td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{o.code}</td>
+                        <td className="px-4 py-2.5 text-xs">{o.menuMode === "own" ? "Own" : "Shared"}</td>
+                        <td className="px-4 py-2.5 text-right">
+                          <Button variant="ghost" onClick={() => void toggleOutlet(o)}>{o.isActive ? "Close" : "Reopen"}</Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </section>
+
           <section>
             <h3 className="text-sm font-semibold">Record a payment</h3>
             <p className="mt-0.5 text-xs text-muted">
@@ -282,6 +417,16 @@ export function Drawer({
             </details>
 
             <form onSubmit={submitMenu} className="mt-3 space-y-3">
+              {outlets?.some((o) => o.menuMode === "own") ? (
+                <Field label="Import into">
+                  <select className={inputClass} value={importTarget} onChange={(e) => setImportTarget(e.target.value)}>
+                    <option value="">Shared brand menu</option>
+                    {outlets.filter((o) => o.menuMode === "own").map((o) => (
+                      <option key={o.id} value={o.id}>{o.name} (own menu)</option>
+                    ))}
+                  </select>
+                </Field>
+              ) : null}
               <textarea
                 className={`${inputClass} min-h-56 resize-y font-mono text-xs`}
                 placeholder={'{ "categories": [ … ] }   or   Starters,Paneer Tikka,240,GST_5,true,'}

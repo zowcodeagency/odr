@@ -65,3 +65,37 @@ test("a manager cannot remove staff — user:write is owner-only", async () => {
     },
   );
 });
+
+const OUTLET = "55555555-5555-5555-5555-555555555555";
+
+const repoForCreate = () => {
+  const added: { userId: string; role: string; outletId: string | null }[] = [];
+  const repo = {
+    findUserByEmail: async () => null,
+    createUser: async (i: { email: string; fullName: string }) => ({ id: "new-user", email: i.email, fullName: i.fullName }),
+    listMemberships: async () => [],
+    outletExists: async (_t: string, id: string) => id === OUTLET,
+    addMembership: async (_t: string, userId: string, role: string, outletId: string | null) => {
+      added.push({ userId, role, outletId });
+    },
+  } as unknown as IdentityRepo;
+  return { repo, added };
+};
+
+test("a captain must be pinned to an outlet; a manager is never pinned", async () => {
+  const { repo, added } = repoForCreate();
+  await asOwner(repo, async (svc) => {
+    await expect(
+      svc.createStaff({ email: "c@x.dev", password: "password1", fullName: "C", role: "captain" }),
+    ).rejects.toThrow(/outlet/);
+    await expect(
+      svc.createStaff({ email: "c@x.dev", password: "password1", fullName: "C", role: "captain", outletId: "not-here" }),
+    ).rejects.toThrow(/outlet/);
+    await svc.createStaff({ email: "c@x.dev", password: "password1", fullName: "C", role: "captain", outletId: OUTLET });
+    await svc.createStaff({ email: "m@x.dev", password: "password1", fullName: "M", role: "manager", outletId: OUTLET });
+  });
+  expect(added).toEqual([
+    { userId: "new-user", role: "captain", outletId: OUTLET },
+    { userId: "new-user", role: "manager", outletId: null },
+  ]);
+});

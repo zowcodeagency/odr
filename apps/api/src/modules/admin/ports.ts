@@ -1,9 +1,24 @@
+import type { MenuMode } from "@odr/db/schema";
+
 export type TenantRow = {
   id: string;
   name: string;
   slug: string;
   subscriptionStart: string | null;
   subscriptionEnd: string | null;
+  createdAt: string;
+  outletCount: number;
+};
+
+export type OutletRow = {
+  id: string;
+  name: string;
+  code: string;
+  gstin: string | null;
+  city: string;
+  invoicePrefix: string;
+  isActive: boolean;
+  menuMode: MenuMode;
   createdAt: string;
 };
 
@@ -27,13 +42,18 @@ export interface AdminRepo {
   tenantById(id: string): Promise<TenantRow | null>;
   setSubscriptionEnd(tenantId: string, end: string): Promise<void>;
 
+  listOutlets(tenantId: string): Promise<OutletRow[]>;
+  outletCodeExists(tenantId: string, code: string): Promise<boolean>;
   createOutlet(input: {
     tenantId: string;
     name: string;
     code: string;
     gstin?: string;
+    address: { line1: string; line2?: string; city: string; state: string; pincode: string; country: string };
     invoicePrefix: string;
+    menuMode: MenuMode;
   }): Promise<{ id: string }>;
+  setOutletActive(tenantId: string, outletId: string, isActive: boolean): Promise<boolean>;
 
   /** Reuses an existing account when the email is already registered. */
   upsertOwner(input: { email: string; passwordHash: string; fullName: string }): Promise<{ id: string }>;

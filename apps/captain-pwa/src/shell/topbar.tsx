@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { NetworkPill, ThemeToggle } from "@odr/ui";
+import type { Session } from "../lib/session.ts";
 import { BrandMark } from "./logo.tsx";
+import { OutletSwitcher } from "./outlet-switcher.tsx";
 
 interface TopbarProps {
-  outletName: string;
-  who: string;
-  role: string;
+  session: Session;
 }
 
 /** Identity + status only — navigation lives in the rail (desktop) and the bottom bar (phone). */
-export const Topbar = ({ outletName, who, role }: TopbarProps) => {
+export const Topbar = ({ session }: TopbarProps) => {
   const [online, setOnline] = useState(() => navigator.onLine);
 
   useEffect(() => {
@@ -34,11 +34,9 @@ export const Topbar = ({ outletName, who, role }: TopbarProps) => {
       </span>
 
       <div className="min-w-0">
-        <span className="block text-[14px] font-medium tracking-[-0.01em] truncate">
-          {outletName}
-        </span>
+        <OutletSwitcher session={session} />
         <span className="block text-[12px] text-[var(--fg-tertiary)] truncate">
-          {who} · {role}
+          {session.email} · {session.role}
         </span>
       </div>
 

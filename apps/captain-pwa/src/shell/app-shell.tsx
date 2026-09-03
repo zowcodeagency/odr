@@ -19,11 +19,7 @@ export const AppShell = ({
     <div className="h-full flex bg-[var(--bg-canvas)]">
       <NavRail canManage={canManage(session.role)} canSeeSales={canSeeSales(session.role)} isOwner={session.role === "owner"} />
       <div className="flex-1 min-w-0 flex flex-col">
-        <Topbar
-          outletName={session.outletName}
-          who={session.email}
-          role={session.role}
-        />
+        <Topbar session={session} />
         {warn ? <SubscriptionBanner endsAt={session.subscriptionEndsAt as string} /> : null}
         <main className="flex-1 min-h-0 overflow-auto">{children}</main>
         <BottomNav role={session.role} />

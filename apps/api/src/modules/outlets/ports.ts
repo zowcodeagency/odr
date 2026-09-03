@@ -1,15 +1,8 @@
-import type { Outlet, Address, Table, OutletSettings } from "./domain.ts";
+import type { Outlet, Table, OutletSettings } from "./domain.ts";
 
 export interface OutletsRepo {
   list(tenantId: string): Promise<Outlet[]>;
   byId(tenantId: string, outletId: string): Promise<Outlet | null>;
-  create(tenantId: string, input: {
-    name: string;
-    code: string;
-    gstin?: string;
-    address: Address;
-    invoicePrefix?: string;
-  }): Promise<Outlet>;
   updateSettings(tenantId: string, outletId: string, settings: OutletSettings): Promise<Outlet | null>;
   /** Get-or-create in one statement — returns the existing token when there is one. */
   ensurePublicToken(tenantId: string, outletId: string, candidate: string): Promise<string | null>;

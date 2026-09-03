@@ -130,3 +130,32 @@ test("a fired table can order again, and only the new lines are re-fired", async
     expect(bill.lines).toHaveLength(2);
   });
 });
+
+test("an inactive outlet refuses new orders", async () => {
+  const svc = makeOrderingService({ repo: inMemoryOrderRepo(), events: new InMemoryEventBus(), outletActive: async () => false });
+  await runWithContext(ctx, async () => {
+    await expect(svc.openTable({ outletId: ctx.outletId, tableLabel: "T1" })).rejects.toThrow(/closed/);
+  });
+});
+
+test("pinned staff cannot open or list orders at another outlet", async () => {
+  const svc = makeOrderingService({ repo: inMemoryOrderRepo(), events: new InMemoryEventBus() });
+  const other = "99999999-9999-9999-9999-999999999999";
+  await runWithContext({ ...ctx, role: "captain" as const }, async () => {
+    await expect(svc.openTable({ outletId: other, tableLabel: "T1" })).rejects.toThrow(/out of scope/);
+    await expect(svc.listOpen(other)).rejects.toThrow(/out of scope/);
+    await expect(svc.listPendingKots(other)).rejects.toThrow(/out of scope/);
+  });
+});
+
+test("a captain pinned elsewhere cannot touch an order by id", async () => {
+  const svc = makeOrderingService({ repo: inMemoryOrderRepo(), events: new InMemoryEventBus() });
+  const o = await runWithContext(ctx, () => svc.openTable({ outletId: asOutletId(ctx.outletId), tableLabel: "T-5" }));
+
+  const elsewhere = { ...ctx, role: "captain" as const, outletId: "99999999-9999-9999-9999-999999999999" };
+  await runWithContext(elsewhere, async () => {
+    await expect(svc.addItems({ orderId: o.id, lines: [sampleLine] })).rejects.toThrow(/out of scope/);
+    await expect(svc.fireKot({ orderId: o.id })).rejects.toThrow(/out of scope/);
+    await expect(svc.byId(o.id)).rejects.toThrow(/out of scope/);
+  });
+});

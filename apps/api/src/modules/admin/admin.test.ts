@@ -3,6 +3,7 @@ import {
   addMonths,
   extendSubscription,
   isExpired,
+  outletCodeFor,
   parseCsvMenu,
   parseJsonMenu,
   subscriptionStatus,
@@ -121,7 +122,15 @@ test("import reuses an existing category by name and only counts new ones", asyn
   } as unknown as MenuService;
 
   const svc = makeAdminService({
-    repo: fakeRepo({ id: "t-1", name: "X", slug: "x", subscriptionStart: null, subscriptionEnd: null, createdAt: "" }),
+    repo: fakeRepo({
+      id: "t-1",
+      name: "X",
+      slug: "x",
+      subscriptionStart: null,
+      subscriptionEnd: null,
+      createdAt: "",
+      outletCount: 1,
+    }),
     menu,
   });
 
@@ -140,4 +149,48 @@ test("import reuses an existing category by name and only counts new ones", asyn
   ]);
   expect(again).toEqual({ categoriesCreated: 0, itemsCreated: 0, itemsUpdated: 1 });
   expect(items).toHaveLength(2);
+});
+
+// --------------------------------------------------------------- outlets
+
+test("outlet code is an upper-case slug capped at 16 chars", () => {
+  expect(outletCodeFor("Spice Route – Airport Road")).toBe("SPICE-ROUTE-AIRP");
+  expect(outletCodeFor("  ")).toBe("OUTLET");
+});
+
+test("adding an outlet picks a free code and honours the menu choice", async () => {
+  const created: unknown[] = [];
+  const repo = {
+    tenantById: async () => ({ id: "t-1", name: "X", slug: "x", subscriptionStart: null, subscriptionEnd: null, createdAt: "", outletCount: 1 }),
+    outletCodeExists: async (_t: string, code: string) => code === "AIRPORT",
+    createOutlet: async (input: unknown) => {
+      created.push(input);
+      return { id: "o-2" };
+    },
+  } as unknown as AdminRepo;
+  const svc = makeAdminService({ repo, menu: {} as MenuService });
+  const res = await svc.createOutlet("t-1", {
+    name: "Airport",
+    address: { line1: "Terminal 1", city: "Mangalore", state: "Karnataka", pincode: "574142", country: "IN" },
+    menuMode: "own",
+  });
+  expect(res).toEqual({ outletId: "o-2", code: "AIRPORT-2" });
+  expect(created[0]).toMatchObject({ tenantId: "t-1", code: "AIRPORT-2", menuMode: "own", invoicePrefix: "A" });
+});
+
+test("outlet code retries stay within 16 chars past double-digit suffixes", async () => {
+  const repo = {
+    tenantById: async () => ({ id: "t-1", name: "X", slug: "x", subscriptionStart: null, subscriptionEnd: null, createdAt: "", outletCount: 1 }),
+    // base and "-2".."-10" are taken; "-11" is free.
+    outletCodeExists: async (_t: string, code: string) => code === "SPICE-ROUTE-AIRP" || /-(?:[2-9]|10)$/.test(code),
+    createOutlet: async () => ({ id: "o-2" }),
+  } as unknown as AdminRepo;
+  const svc = makeAdminService({ repo, menu: {} as MenuService });
+  const res = await svc.createOutlet("t-1", {
+    name: "SPICE ROUTE AIRPORT ROAD",
+    address: { line1: "Terminal 1", city: "Mangalore", state: "Karnataka", pincode: "574142", country: "IN" },
+    menuMode: "own",
+  });
+  expect(res.code.length).toBeLessThanOrEqual(16);
+  expect(res.code.endsWith("-11")).toBe(true);
 });

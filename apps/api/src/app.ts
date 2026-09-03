@@ -28,8 +28,8 @@ export const buildApp = async () => {
   // Internal team surface — ADMIN_KEY bearer auth, no tenant JWT.
   app.route("/admin", adminModule({ db, menu: menu.service }).routes);
 
-  const ordering = orderingModule({ db, events });
   const outlets = outletsModule({ db, events });
+  const ordering = orderingModule({ db, events, outletActive: outlets.service.activeInTenant });
 
   // Diner QR surface — no JWT, gated by the outlet's public_token.
   app.route("/public", publicModule({ db, menu: menu.service, ordering: ordering.service }).routes);

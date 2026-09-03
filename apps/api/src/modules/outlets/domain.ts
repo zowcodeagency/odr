@@ -1,3 +1,5 @@
+import type { MenuMode } from "@odr/db/schema";
+
 export type Address = {
   line1: string;
   line2?: string;
@@ -18,14 +20,21 @@ export type Outlet = {
   printerIp: string | null;
   printerPort: number;
   publicToken: string | null;
+  isActive: boolean;
+  menuMode: MenuMode;
 };
 
 export type Table = { id: string; label: string };
 
+/** Everything the owner may change from the app. Printing plus the outlet's identity. */
 export type OutletSettings = {
   paperWidth?: number;
   printerIp?: string | null;
   printerPort?: number;
+  name?: string;
+  gstin?: string | null;
+  address?: Address;
+  invoicePrefix?: string;
 };
 
 /** Thermal rolls come in two sizes; anything else is a typo. */

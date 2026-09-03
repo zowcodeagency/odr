@@ -21,6 +21,7 @@ const staffSchema = z.object({
   password: z.string().min(8),
   fullName: z.string().min(1),
   role: z.enum(["owner", "manager", "captain", "cashier", "kitchen"]),
+  outletId: z.string().uuid().optional(),
 });
 
 const parse = <T>(s: z.ZodSchema<T>, body: unknown): T => {

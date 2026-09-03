@@ -27,8 +27,8 @@ export interface BillingRepo {
   reserveAndCreate(input: BillInsert, prefix: string): Promise<Bill>;
 
   byId(tenantId: string, id: string): Promise<Bill | null>;
-  /** Invoices for one outlet, newest first. `from`/`to` are ISO instants. */
-  list(tenantId: string, opts: { outletId: string; from?: string; to?: string; limit: number }): Promise<BillSummary[]>;
+  /** Invoices for one outlet, or every outlet when omitted, newest first. `from`/`to` are ISO instants. */
+  list(tenantId: string, opts: { outletId?: string; from?: string; to?: string; limit: number }): Promise<BillSummary[]>;
   byOrderId(tenantId: string, orderId: string): Promise<Bill | null>;
   /** Fills in customer details on an already-created bill. */
   setCustomer(tenantId: string, billId: string, c: { customerName: string | null; customerPhone: string | null }): Promise<Bill | null>;

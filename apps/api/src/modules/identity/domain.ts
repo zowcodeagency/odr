@@ -18,4 +18,7 @@ export type StaffMember = {
   email: string;
   fullName: string;
   role: Role;
+  /** null = every outlet (owner / manager). */
+  outletId: string | null;
+  outletName: string | null;
 };

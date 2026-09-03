@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { daysRemaining, isExpired } from "./session.ts";
+import { pickOutlet } from "./session.ts";
 
 const iso = (offsetDays: number) =>
   new Date(Date.now() + offsetDays * 86_400_000).toISOString().slice(0, 10);
@@ -20,4 +21,15 @@ test("no end date means unenforced", () => {
 test("days remaining counts whole days", () => {
   expect(daysRemaining(iso(0))).toBe(0);
   expect(daysRemaining(iso(5))).toBe(5);
+});
+
+const A = { id: "a", name: "Central" };
+const B = { id: "b", name: "Airport" };
+
+test("pickOutlet: one outlet is automatic, a remembered one wins, otherwise ask", () => {
+  expect(pickOutlet([A], null)).toEqual(A);
+  expect(pickOutlet([A, B], "b")).toEqual(B);
+  expect(pickOutlet([A, B], "zzz")).toBeNull();
+  expect(pickOutlet([A, B], null)).toBeNull();
+  expect(pickOutlet([], null)).toBeNull();
 });

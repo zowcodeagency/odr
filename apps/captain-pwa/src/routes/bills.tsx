@@ -5,7 +5,7 @@ import { api, type BillSummary } from "../lib/api.ts";
 import { navigate } from "../lib/router.ts";
 import { useAsync } from "../lib/use-async.ts";
 import { midnight, minutesSince } from "../features/ordering/channels.ts";
-import { canSeeSales, type Session } from "../lib/session.ts";
+import { canManage, canSeeSales, type Session } from "../lib/session.ts";
 
 
 const sum = (bills: BillSummary[]) =>
@@ -16,6 +16,9 @@ const time = (iso: string) =>
 
 export const BillsRoute = ({ session }: { session: Session }) => {
   const [q, setQ] = useState("");
+  const canAll = canManage(session.role) && session.outlets.length > 1;
+  const [scope, setScope] = useState<"outlet" | "all">("outlet");
+  const all = canAll && scope === "all";
   const outletId = session.outletId;
 
   // Two days of invoices plus what's still open answers every question on this
@@ -23,12 +26,13 @@ export const BillsRoute = ({ session }: { session: Session }) => {
   const data = useAsync(
     async () => {
       const [bills, open] = await Promise.all([
-        api.bills(outletId, midnight(1).toISOString()),
+        api.bills(all ? null : outletId, midnight(1).toISOString()),
+        // Open orders stay per outlet — the floor is a place, takings are a total.
         api.openOrders(outletId),
       ]);
       return { bills, open };
     },
-    [outletId],
+    [outletId, all],
     15000,
   );
 
@@ -62,6 +66,8 @@ export const BillsRoute = ({ session }: { session: Session }) => {
     return Number(((t - y) * 100n) / y);
   })();
 
+  const outletName = (id: string) => session.outlets.find((o) => o.id === id)?.name ?? "";
+
   if (!canSeeSales(session.role)) {
     return (
       <div className="px-4 py-10 text-center">
@@ -72,13 +78,34 @@ export const BillsRoute = ({ session }: { session: Session }) => {
 
   return (
     <div className="px-4 py-5 sm:px-6 sm:py-7 lg:px-10 max-w-[1100px] mx-auto">
-      <header className="mb-5">
-        <h1 className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.02em]">
-          Sales &amp; invoices
-        </h1>
-        <p className="mt-1 text-[13px] text-[var(--fg-tertiary)]">
-          {session.outletName} · refreshes every 15 seconds
-        </p>
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.02em]">Sales &amp; invoices</h1>
+          <p className="mt-1 text-[13px] text-[var(--fg-tertiary)]">
+            {all ? `All ${session.outlets.length} outlets` : session.outletName} · refreshes every 15 seconds
+          </p>
+        </div>
+        {canAll ? (
+          <div
+            role="tablist"
+            aria-label="sales scope"
+            className="flex p-1 gap-1 rounded-[var(--radius-pill)] bg-[var(--bg-surface-2)] ring-1 ring-[var(--line-subtle)]"
+          >
+            {([["outlet", "This outlet"], ["all", "All outlets"]] as const).map(([k, label]) => (
+              <button
+                key={k}
+                role="tab"
+                aria-selected={scope === k}
+                onClick={() => setScope(k)}
+                className={`px-4 min-h-10 rounded-[var(--radius-pill)] text-[13px] transition-colors duration-[var(--dur-quick)] ${
+                  scope === k ? "bg-[var(--bg-surface)] font-medium shadow-[var(--shadow-1)]" : "text-[var(--fg-muted)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </header>
 
       {/* Done vs not done, today against yesterday. */}
@@ -98,17 +125,38 @@ export const BillsRoute = ({ session }: { session: Session }) => {
         <Stat
           label="Still open"
           value={<Money minor={insight.openValue} mono />}
-          hint={`${open.length} order${open.length === 1 ? "" : "s"} on the floor`}
+          hint={
+            all
+              ? `${session.outletName} only`
+              : `${open.length} order${open.length === 1 ? "" : "s"} on the floor`
+          }
         />
         <Stat
           label="Taken today"
-          value={<Money minor={sum(insight.today) + insight.openValue} mono />}
-          hint="settled + still open"
+          value={<Money minor={all ? sum(insight.today) : sum(insight.today) + insight.openValue} mono />}
+          hint={all ? "settled · all outlets" : "settled + still open"}
         />
       </section>
 
+      {all ? (
+        <section className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {session.outlets.map((o) => {
+            const mine = insight.today.filter((b) => b.outletId === o.id);
+            return (
+              <div key={o.id} className="flex items-center justify-between gap-3 px-4 py-3 rounded-[var(--radius-3)] bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]">
+                <span className="min-w-0">
+                  <span className="block text-[14px] font-medium truncate">{o.name}</span>
+                  <span className="block text-[12px] text-[var(--fg-tertiary)]">{mine.length} bill{mine.length === 1 ? "" : "s"} today</span>
+                </span>
+                <Money minor={sum(mine)} mono className="text-[15px] font-medium" />
+              </div>
+            );
+          })}
+        </section>
+      ) : null}
+
       {/* Not done — the orders that have not turned into money yet. */}
-      {open.length > 0 ? (
+      {!all && open.length > 0 ? (
         <section className="mb-6">
           <h2 className="mb-2 text-[13px] font-medium text-[var(--fg-secondary)]">
             Not settled yet · {open.length}
@@ -181,7 +229,9 @@ export const BillsRoute = ({ session }: { session: Session }) => {
                            hover:bg-[var(--bg-surface-2)]"
               >
                 <span className="flex-1 min-w-0">
-                  <span className="block font-mono text-[13px] truncate">{b.invoiceNumber}</span>
+                  <span className="block font-mono text-[13px] truncate">
+                    {all ? `${outletName(b.outletId)} · ` : ""}{b.invoiceNumber}
+                  </span>
                   <span className="block text-[12px] text-[var(--fg-tertiary)] truncate">
                     {time(b.settledAt)}
                     {b.customerName ? ` · ${b.customerName}` : ""}

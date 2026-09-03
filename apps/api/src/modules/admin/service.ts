@@ -1,4 +1,5 @@
 import { hashPassword } from "@odr/auth";
+import type { MenuMode } from "@odr/db/schema";
 import { Money, NotFoundError, asTenantId, asUserId } from "@odr/shared";
 import { runWithContext } from "@odr/tenancy";
 import type { MenuService } from "../menu/service.ts";
@@ -7,6 +8,7 @@ import {
   addMonths,
   extendSubscription,
   invoicePrefixFor,
+  outletCodeFor,
   slugify,
   subscriptionStatus,
   type ImportCategory,
@@ -58,7 +60,10 @@ export const makeAdminService = ({ repo, menu }: AdminServiceDeps) => ({
       name: input.name,
       code: slug.toUpperCase(),
       gstin: input.gstin,
+      // ponytail: the team fills the real address in later via /api/v1/outlets.
+      address: { line1: "-", city: "-", state: "-", pincode: "-", country: "IN" },
       invoicePrefix: invoicePrefixFor(input.name),
+      menuMode: "shared",
     });
 
     const owner = await repo.upsertOwner({
@@ -87,8 +92,45 @@ export const makeAdminService = ({ repo, menu }: AdminServiceDeps) => ({
       subscriptionStart: t.subscriptionStart,
       subscriptionEnd: t.subscriptionEnd,
       createdAt: t.createdAt,
+      outletCount: t.outletCount,
       ...subscriptionStatus(t.subscriptionEnd),
     }));
+  },
+
+  listOutlets: async (tenantId: string) => {
+    if (!(await repo.tenantById(tenantId))) throw new NotFoundError("tenant", tenantId);
+    return repo.listOutlets(tenantId);
+  },
+
+  /** Second, third… outlet for a brand. `menuMode` is the "share the brand menu?" answer. */
+  async createOutlet(tenantId: string, input: {
+    name: string;
+    gstin?: string;
+    address: { line1: string; line2?: string; city: string; state: string; pincode: string; country: string };
+    invoicePrefix?: string;
+    menuMode: MenuMode;
+  }) {
+    if (!(await repo.tenantById(tenantId))) throw new NotFoundError("tenant", tenantId);
+    const base = outletCodeFor(input.name);
+    let code = base;
+    for (let n = 2; await repo.outletCodeExists(tenantId, code); n++) {
+      code = `${base.slice(0, 16 - 1 - String(n).length).replace(/-$/, "")}-${n}`;
+    }
+    const { id } = await repo.createOutlet({
+      tenantId,
+      name: input.name,
+      code,
+      gstin: input.gstin,
+      address: input.address,
+      invoicePrefix: input.invoicePrefix ?? invoicePrefixFor(input.name),
+      menuMode: input.menuMode,
+    });
+    return { outletId: id, code };
+  },
+
+  async setOutletActive(tenantId: string, outletId: string, isActive: boolean) {
+    if (!(await repo.setOutletActive(tenantId, outletId, isActive))) throw new NotFoundError("outlet", outletId);
+    return { outletId, isActive };
   },
 
   async addTopup(tenantId: string, input: { amount: string | number; monthsAdded: number; note?: string }) {
@@ -117,14 +159,16 @@ export const makeAdminService = ({ repo, menu }: AdminServiceDeps) => ({
    * Bulk import through the real menu service — categories are matched by name
    * (created when missing), items are always created. Returns created counts.
    */
-  async importMenu(tenantId: string, categories: ImportCategory[]) {
+  async importMenu(tenantId: string, categories: ImportCategory[], outletId?: string) {
     const tenant = await repo.tenantById(tenantId);
     if (!tenant) throw new NotFoundError("tenant", tenantId);
 
     return runWithContext(
       { tenantId: asTenantId(tenantId), userId: asUserId(ADMIN_ACTOR), role: "owner" },
       async () => {
-        const byName = new Map((await menu.listCategories()).map((c) => [c.name.trim().toLowerCase(), c.id]));
+        const byName = new Map(
+          (await menu.listCategories(outletId)).map((c) => [c.name.trim().toLowerCase(), c.id]),
+        );
         let categoriesCreated = 0;
         let itemsCreated = 0;
         let itemsUpdated = 0;
@@ -133,7 +177,7 @@ export const makeAdminService = ({ repo, menu }: AdminServiceDeps) => ({
           const key = cat.name.trim().toLowerCase();
           let categoryId = byName.get(key);
           if (!categoryId) {
-            categoryId = (await menu.createCategory({ name: cat.name })).id;
+            categoryId = (await menu.createCategory({ name: cat.name, outletId })).id;
             byName.set(key, categoryId);
             categoriesCreated++;
           }
@@ -147,6 +191,7 @@ export const makeAdminService = ({ repo, menu }: AdminServiceDeps) => ({
               basePrice: item.price,
               taxClass: item.taxClass,
               isVeg: item.isVeg,
+              outletId,
             });
             if (created) itemsCreated++;
             else itemsUpdated++;

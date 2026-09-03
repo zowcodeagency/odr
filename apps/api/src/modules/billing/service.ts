@@ -3,7 +3,7 @@ import { can } from "@odr/auth";
 import { Money } from "@odr/shared";
 import { getTaxStrategy } from "@odr/tax";
 import type { EventBus } from "@odr/events";
-import { getContext } from "@odr/tenancy";
+import { assertOutletScope, getContext } from "@odr/tenancy";
 import type { BillingRepo, BillInsert } from "./ports.ts";
 import { fiscalYearFor, type Bill, type BillLine } from "./domain.ts";
 
@@ -42,6 +42,7 @@ export const makeBillingService = ({ repo, events, country, orders, isInterstate
 
     const existing = await repo.byOrderId(ctx.tenantId, input.orderId);
     if (existing) {
+      assertOutletScope(existing.outletId);
       // Idempotent — settle is at-least-once, and the order.settled event
       // already materialised this bill without customer details. Fill them in
       // now rather than dropping what the cashier just typed.
@@ -59,6 +60,7 @@ export const makeBillingService = ({ repo, events, country, orders, isInterstate
 
     const order = await orders.byIdForBilling(ctx.tenantId, input.orderId);
     if (!order) throw new NotFoundError("order", input.orderId);
+    assertOutletScope(order.outletId);
     if (order.state !== "settled") {
       throw new ConflictError("order must be in 'settled' state to be billed", { orderId: order.id, state: order.state });
     }
@@ -140,11 +142,20 @@ export const makeBillingService = ({ repo, events, country, orders, isInterstate
     return bill;
   },
 
-  byId: (id: string) => repo.byId(getContext().tenantId, id),
+  async byId(id: string) {
+    const ctx = getContext();
+    const bill = await repo.byId(ctx.tenantId, id);
+    if (!bill) return null;
+    assertOutletScope(bill.outletId);
+    return bill;
+  },
 
-  list(opts: { outletId: string; from?: string; to?: string; limit?: number }) {
+  /** One outlet, or every outlet the caller may see (unpinned roles only). */
+  async list(opts: { outletId?: string; from?: string; to?: string; limit?: number }) {
     const ctx = getContext();
     if (!can(ctx.role, "billing:read")) throw new ForbiddenError("cannot read bills");
+    if (opts.outletId) assertOutletScope(opts.outletId);
+    else if (ctx.outletId) throw new ForbiddenError("outlet out of scope");
     // ponytail: capped list, no cursor. Add paging when a shift exceeds 500 bills.
     return repo.list(ctx.tenantId, { ...opts, limit: Math.min(opts.limit ?? 200, 500) });
   },

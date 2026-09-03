@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./lib/api.ts";
 import { useRoute } from "./lib/router.ts";
-import { getSession, isExpired, patchSession, type Session } from "./lib/session.ts";
+import { getSession, isExpired, patchSession, SESSION_EVENT, type Session } from "./lib/session.ts";
 import { applyBranding, getStoredBranding, storeBranding } from "./lib/branding.ts";
 import { Toaster } from "./lib/toast.tsx";
 import { AppShell } from "./shell/app-shell.tsx";
@@ -24,6 +24,11 @@ export const App = () => {
   // hash, so there is no second source of truth to keep in sync.
   const [session, setSession] = useState<Session | null>(() => getSession());
   useEffect(() => setSession(getSession()), [route]);
+  useEffect(() => {
+    const on = () => setSession(getSession());
+    window.addEventListener(SESSION_EVENT, on);
+    return () => window.removeEventListener(SESSION_EVENT, on);
+  }, []);
 
   // Refresh the subscription window and branding from the API once per boot —
   // the stored copies are snapshots from sign-in.
@@ -44,6 +49,15 @@ export const App = () => {
         if (JSON.stringify(b) !== JSON.stringify(getStoredBranding())) {
           storeBranding(b);
           applyBranding(b);
+        }
+      })
+      .catch(() => undefined);
+    void api
+      .outlets()
+      .then((list) => {
+        const outlets = list.filter((o) => o.isActive).map((o) => ({ id: o.id, name: o.name }));
+        if (JSON.stringify(outlets) !== JSON.stringify(session.outlets)) {
+          patchSession({ outlets });
         }
       })
       .catch(() => undefined);
