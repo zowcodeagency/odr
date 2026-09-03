@@ -8,6 +8,8 @@ Every user-facing change ships with its docs in the same commit:
 - `docs/handbook/odr-handbook.html` — the staff handbook; regenerate the PDF with
   `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --no-pdf-header-footer --print-to-pdf="$PWD/docs/handbook/Odr-Handbook.pdf" "file://$PWD/docs/handbook/odr-handbook.html"`.
 - `apps/captain-pwa/public/docs/roles.html` when permissions change.
+- A new guide gets its own `public/docs/<name>.html` AND a card in `public/docs/index.html`
+  (the /docs grid), plus a footer link from the sibling pages.
 Plain words, no jargon — these pages are read by restaurant owners.
 
 ## Deploy
