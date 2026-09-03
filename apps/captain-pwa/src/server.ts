@@ -66,8 +66,8 @@ const server = Bun.serve({
     // Static docs pages (public/docs/*.html) — shareable links, no login.
     // In production Workers assets serves them; this mirrors its "auto"
     // html handling so /docs/roles works without the extension in dev too.
-    if (/^\/docs\/[\w-]+(\.html)?$/.test(url.pathname)) {
-      const name = url.pathname.replace("/docs/", "").replace(/\.html$/, "");
+    if (/^\/docs(\/[\w-]+(\.html)?)?\/?$/.test(url.pathname)) {
+      const name = url.pathname.replace(/^\/docs\/?/, "").replace(/\.html$/, "") || "index";
       const file = Bun.file(`${import.meta.dir}/../public/docs/${name}.html`);
       return file
         .exists()
