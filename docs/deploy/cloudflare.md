@@ -212,6 +212,35 @@ Secrets go in with `wrangler secret put JWT_SECRET` (and `ADMIN_KEY`).
 
 ---
 
+## Release notes that change the deploy
+
+### 2026-09-03 — multi-outlet
+
+Migration `0008_spicy_doorman` adds `memberships.outlet_id`, `outlets.is_active`,
+`outlets.menu_mode`, the `menu_item_soldout` table and composite
+`(outlet_id, tenant_id)` foreign keys, then backfills: every captain / cashier /
+kitchen membership is pinned to its tenant's outlet, and legacy menu rows that
+the old PWA wrote with an `outlet_id` are un-pinned so a second outlet sees the
+shared menu. The API reads those columns on every request, so the order is:
+
+```bash
+DIRECT_URL=<prod direct URL> bun run db:migrate   # 1. schema first
+cd apps/api && bunx wrangler deploy               # 2. API
+cd ../.. && bun run build:web                     # 3. front-ends (DINER_ORIGIN set)
+for a in captain-pwa diner admin; do (cd apps/$a && bunx wrangler deploy); done
+```
+
+Front-end API shapes are extended, never changed, so a lagging front-end is
+fine; a lagging migration is not. The `/api/v1/outlets` create route is gone —
+outlets are added only through the admin console.
+
+Smoke test additions: sign in as an owner with two outlets → the "Choose an
+outlet" step appears → the outlet name in the topbar opens the switcher → a
+dish marked sold out at one outlet stays on sale at the other → Sales shows the
+"All outlets" toggle.
+
+---
+
 ## After every deploy — 2 minute smoke test
 
 1. `curl https://pos.odr.app/api/v1/../health` → `{"ok":true}`

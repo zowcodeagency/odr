@@ -22,8 +22,8 @@ register → login → /me → create master/outlet category → create item
 | Module | What it does | Live? |
 |---|---|---|
 | `identity` | register / login / JWT / RBAC | ✅ |
-| `menu` | categories + items, master + per-outlet override | ✅ |
-| `outlets` | outlet CRUD with GSTIN format validation | ✅ |
+| `menu` | categories + items; shared brand menu or per-outlet menu (`outlets.menu_mode`), sold-out per outlet | ✅ |
+| `outlets` | multi-outlet per tenant: owner-editable details, active flag, pinned-staff scope (`memberships.outlet_id`), created by the Odr team via `/admin` | ✅ |
 | `ordering` | table + KOT lifecycle FSM, drizzle-persisted (orders survive restarts), channels: dine_in / parcel / zomato / swiggy / other / qr | ✅ |
 | `billing` | settle → GST-compliant bill with per-(component, rate) breakdown, sequential invoice numbers | ✅ |
 | `admin` | ADMIN_KEY-gated internal API: create restaurants, subscription top-ups, menu import (JSON/CSV) | ✅ |
@@ -40,6 +40,10 @@ register → login → /me → create master/outlet category → create item
 2. **CI is not wired** — pre-commit (husky + lint-staged + commitlint) guards locally;
    GitHub Actions still TODO.
 3. **Zomato/Swiggy are manual quick-entry channels** — no partner API integrations.
+4. **Multi-outlet (2026-09-03):** owners/managers see every outlet and switch from the
+   topbar; captains/cashiers/kitchen are pinned to one outlet. Migration `0008` must run
+   before deploying the API that depends on it (see `docs/deploy/cloudflare.md`).
+   Design: `docs/superpowers/specs/2026-09-03-multi-outlet-design.md`.
 
 ---
 

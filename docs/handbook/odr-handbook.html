@@ -253,12 +253,29 @@
     <li>Open the Odr address in the browser. Bookmark it, or add it to the home screen so it opens like an app.</li>
     <li>Type your email and password. Tap <span class="pill g">Begin shift</span>.</li>
     <li>If you work at more than one restaurant, pick the one you are in today.</li>
+    <li>If your restaurant has more than one outlet and you are an owner or manager, pick the outlet you are in. Odr remembers it on this device.</li>
     <li>You land on the <strong>Tables</strong> screen. You are ready.</li>
   </ol>
 
+  <h3>More than one outlet</h3>
+  <p>
+    One Odr account can run several outlets of the same brand. Everything that
+    happens on the floor — tables, orders, kitchen tickets, bills and invoice
+    numbers — belongs to one outlet.
+  </p>
+  <table>
+    <tbody>
+      <tr><td>Owner, manager</td><td>See every outlet. Tap the <strong>outlet name in the top bar</strong> to switch. The floor, kitchen and sales screens change to that outlet.</td></tr>
+      <tr><td>Captain, cashier, kitchen</td><td>Belong to one outlet, chosen when the owner adds them. They sign straight into it and cannot see the others.</td></tr>
+      <tr><td>Menu</td><td>Outlets usually share the brand menu. <strong>Sold out</strong> is marked per outlet, so a dish finished at one branch stays on sale at the next. An outlet can instead have its own menu — ask Odr when the outlet is set up.</td></tr>
+      <tr><td>Sales</td><td>Owners and managers get an <strong>All outlets</strong> switch on the Sales screen with a total per outlet.</td></tr>
+      <tr><td>Adding an outlet</td><td>Done by the Odr team — pricing is per outlet. You then fill in its name, GSTIN, address and invoice prefix under Settings → Outlet.</td></tr>
+    </tbody>
+  </table>
+
   <h3>The bar across the top</h3>
   <ul>
-    <li><strong>Restaurant name and your email</strong> — check you are in the right place.</li>
+    <li><strong>Outlet name and your email</strong> — check you are in the right place. With several outlets the name is a button: tap it to switch.</li>
     <li><strong>Connected / Working offline</strong> — tells you whether the internet is reachable.</li>
     <li><strong>Sun / moon</strong> — switches between light and dark. Dark is easier at night.</li>
     <li><strong>Icons</strong> — Tables, Kitchen, Settings, Sign out.</li>
@@ -557,6 +574,13 @@
   <h2>Settings</h2>
   <p class="lede">Owners and managers only. Set it up once on day one.</p>
 
+  <h3>Outlet</h3>
+  <p>
+    The outlet's name, GSTIN, address and invoice prefix — exactly what prints at
+    the top of every bill. Each outlet has its own. Change them here and the next
+    bill uses the new details.
+  </p>
+
   <h3>Tables</h3>
   <p>
     Type a range and Odr fills in the rest. <code>T-1 to T-12</code> creates twelve
@@ -581,7 +605,9 @@
   <p>
     Shows everyone who can sign in. To add someone, fill in their name, email, a
     password of at least 8 characters, and pick a role (see Section 02). Give people
-    the smallest role that lets them do their job.
+    the smallest role that lets them do their job. For a captain, cashier or
+    kitchen login you also pick <strong>Works at</strong> — the outlet they belong
+    to. Owners and managers see every outlet, so there is nothing to pick.
   </p>
   <p>
     <strong>Removing someone.</strong> When a staff member leaves, tap the bin
@@ -633,6 +659,10 @@
     card stays put, greyed with a <strong>SOLD OUT</strong> tag, so the kitchen
     can see at a glance what is off. Tap <span class="pill g">Back on</span> when
     it returns.
+  </p>
+  <p>
+    With several outlets sharing one menu, sold out applies to <strong>the outlet
+    you are in</strong> only. The dish stays on sale at your other outlets.
   </p>
 
   <h3>Changing a price or a name</h3>
@@ -759,7 +789,10 @@
       <tr><td>Add tables</td><td>Settings → type <code>T-1 to T-12</code>.</td></tr>
       <tr><td>Table QR codes</td><td>Settings → Generate → Print sheet → cut &amp; place.</td></tr>
       <tr><td>Printer</td><td>Settings → paper width, IP, Test print.</td></tr>
-      <tr><td>Add staff</td><td>Settings → Staff → name, email, password, role.</td></tr>
+      <tr><td>Add staff</td><td>Settings → Staff → name, email, password, role, and the outlet they work at.</td></tr>
+      <tr><td>Another outlet</td><td>Tap the outlet name in the top bar → pick it.</td></tr>
+      <tr><td>Sales for all outlets</td><td>Sales → <strong>All outlets</strong>.</td></tr>
+      <tr><td>Outlet details on the bill</td><td>Settings → Outlet → name, GSTIN, address, invoice prefix.</td></tr>
       <tr><td>Someone left</td><td>Settings → Staff → bin icon next to their name.</td></tr>
       <tr><td>Dish is finished</td><td>Menu → tap <strong>Sold out</strong> on the card.</td></tr>
       <tr><td>Change a price</td><td>Menu → tap the dish → edit → Save.</td></tr>
@@ -769,7 +802,7 @@
   </table>
 
   <footer style="margin-top:16px">
-    Odr · Made in Mangaluru · Version 1.0 · FY 2026&ndash;27<br/>
+    Odr · Made in Mangaluru · Version 1.1 · FY 2026&ndash;27<br/>
     Powered by <strong style="color:var(--ink)">zowcode.com</strong>
     &nbsp;·&nbsp; Questions? <a href="mailto:hello@zowcode.com" style="color:var(--ink)">hello@zowcode.com</a>
   </footer>
