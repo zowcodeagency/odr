@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Everything Odr does · Odr</title>
+<link rel="icon" href="/icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #faf8f2; --card: #fffefb; --ink: #2b2620; --ink-2: #5c554a;
+    --muted: #8a8175; --line: #e8e2d4; --accent: #1f8a5f; --accent-soft: #e3f2ea;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.6 "IBM Plex Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  .mark { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: -0.04em; font-size: 20px; }
+  .mark svg { display: block; }
+  h1 { font-size: clamp(28px, 5vw, 38px); letter-spacing: -0.03em; line-height: 1.15; margin: 28px 0 10px; }
+  .lede { color: var(--ink-2); font-size: 17px; max-width: 56ch; }
+  h2 { font-size: 22px; letter-spacing: -0.02em; margin: 48px 0 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 22px 22px 18px; margin-bottom: 14px;
+  }
+  .card header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .card h3 { font-size: 18px; letter-spacing: -0.01em; }
+  .tag {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--accent-soft); color: var(--accent);
+    padding: 3px 9px; border-radius: 999px;
+  }
+  .who { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  ul { padding-left: 0; list-style: none; }
+  li { padding: 5px 0 5px 26px; position: relative; font-size: 15px; }
+  li::before { content: "✓"; position: absolute; left: 2px; color: var(--accent); font-weight: 700; }
+  li.no { color: var(--muted); }
+  li.no::before { content: "✕"; color: #c26a5a; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+  th, td { padding: 10px 14px; text-align: center; border-top: 1px solid var(--line); }
+  thead th { border-top: 0; background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+  th:first-child, td:first-child { text-align: left; font-weight: 500; white-space: nowrap; }
+  td.y { color: var(--accent); font-weight: 700; }
+  td.n { color: #cfc8ba; }
+  .tip {
+    margin-top: 40px; padding: 16px 20px; border-radius: 14px;
+    background: var(--accent-soft); color: var(--ink-2); font-size: 15px;
+  }
+  .tip strong { color: var(--ink); }
+  footer { margin-top: 56px; color: var(--muted); font-size: 13px; }
+  a { color: var(--accent); }
+</style>
+
+<style>
+  .meta { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 6px; }
+  .toc a { font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); text-decoration: none; color: var(--ink-2); }
+  .toc a:hover { border-color: var(--accent); color: var(--accent); }
+  .new td:first-child { white-space: nowrap; color: var(--muted); font-weight: 400; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="mark">
+    <svg viewBox="0 0 256 256" width="26" height="26" aria-hidden="true" style="overflow:visible">
+      <circle cx="122" cy="128" r="72" fill="none" stroke="#1f8a5f" stroke-width="30" stroke-linecap="round" stroke-dasharray="402 50" transform="rotate(7 122 128)"/>
+      <circle cx="220" cy="128" r="15" fill="#1f8a5f"/>
+    </svg>
+    odr
+  </span>
+  <h1>Everything Odr does</h1>
+  <p class="lede">
+    One page, every feature, in plain words. Odr is the restaurant app for taking
+    orders, running the kitchen, billing with GST and letting diners order by QR —
+    on the phones and printer you already own.
+  </p>
+  <p class="meta">Last updated 3 September 2026 · Version 1.1</p>
+
+  <div class="toc">
+    <a href="#works-on-what-you-already-own">Works on what you already own</a>
+    <a href="#the-floor">The floor</a>
+    <a href="#taking-orders">Taking orders</a>
+    <a href="#kitchen-display">Kitchen display</a>
+    <a href="#bills-and-gst">Bills and GST</a>
+    <a href="#parcels-zomato-and-swiggy">Parcels, Zomato and Swiggy</a>
+    <a href="#qr-ordering-for-diners">QR ordering for diners</a>
+    <a href="#your-menu">Your menu</a>
+    <a href="#printing">Printing</a>
+    <a href="#sales-and-invoices">Sales and invoices</a>
+    <a href="#staff-and-roles">Staff and roles</a>
+    <a href="#several-outlets-one-account">Several outlets, one account</a>
+    <a href="#your-brand-not-ours">Your brand, not ours</a>
+    <a href="#simple-pricing-no-surprises">Simple pricing, no surprises</a>
+    <a href="#whats-new">What's new</a>
+  </div>
+
+  <h2>Features</h2>
+  <div class="card" id="works-on-what-you-already-own">
+    <header><h3>Works on what you already own</h3> <span class="tag">No hardware</span></header>
+    <p class="who">Odr is a web app. Install it from a link on any phone, tablet or laptop — Android, iPhone, iPad, Windows, Mac.</p>
+    <ul>
+      <li>One login per person; stay signed in for the whole shift</li>
+      <li>Add to the home screen and it opens like an app</li>
+      <li>Light and dark mode; large touch targets for a busy floor</li>
+      <li>Shows when the internet drops so nobody keeps tapping a dead screen</li>
+    </ul>
+  </div>
+  <div class="card" id="the-floor">
+    <header><h3>The floor</h3> <span class="tag">Tables</span></header>
+    <p class="who">Every table on one screen, colour-coded by what is happening at it.</p>
+    <ul>
+      <li>Free, seated, sent to kitchen, ready to bill — at a glance</li>
+      <li>How long each table has been open and what it has ordered</li>
+      <li>Filters: only open tables, only tables waiting for the kitchen</li>
+      <li>Today's numbers at the top: settled, open, taken so far</li>
+    </ul>
+  </div>
+  <div class="card" id="taking-orders">
+    <header><h3>Taking orders</h3> <span class="tag">Waiter's phone</span></header>
+    <p class="who">Waiters take the order at the table and send it to the kitchen without walking.</p>
+    <ul>
+      <li>Search finds any dish in two letters; photos and veg / non-veg marks on every card</li>
+      <li>A note per line for special requests — less spicy, no onion</li>
+      <li>Add more later: only the new items go to the kitchen</li>
+      <li>Open a table by mistake? Void it before anything is sent</li>
+    </ul>
+  </div>
+  <div class="card" id="kitchen-display">
+    <header><h3>Kitchen display</h3> <span class="tag">KDS</span></header>
+    <p class="who">A screen or tablet in the kitchen replaces paper tickets.</p>
+    <ul>
+      <li>Every KOT appears within seconds, oldest first</li>
+      <li>Colour bar turns red when a ticket is 12 minutes old</li>
+      <li>Tap Done when the food is out</li>
+      <li>Read-only kitchen login, so nobody changes an order from the pass</li>
+    </ul>
+  </div>
+  <div class="card" id="bills-and-gst">
+    <header><h3>Bills and GST</h3> <span class="tag">Billing</span></header>
+    <p class="who">Settle a table and the bill is ready — GST worked out per rate, invoice numbers in sequence.</p>
+    <ul>
+      <li>CGST / SGST split per rate, never lumped together</li>
+      <li>Sequential invoice numbers per outlet, per financial year</li>
+      <li>Optional customer name and phone on the bill</li>
+      <li>Reprint any past bill; search invoices by number, name or phone</li>
+      <li class="no">Odr does not take payments. Cash, UPI or card is settled at your counter as today</li>
+    </ul>
+  </div>
+  <div class="card" id="parcels-zomato-and-swiggy">
+    <header><h3>Parcels, Zomato and Swiggy</h3> <span class="tag">Off-table</span></header>
+    <p class="who">Takeaway and aggregator orders flow through the same kitchen screen as dine-in.</p>
+    <ul>
+      <li>One button for parcel, Zomato, Swiggy or other</li>
+      <li>Type the aggregator order number so the runner can match it</li>
+      <li>Same KOT, same kitchen display, same bill</li>
+    </ul>
+  </div>
+  <div class="card" id="qr-ordering-for-diners">
+    <header><h3>QR ordering for diners</h3> <span class="tag">No app, no login</span></header>
+    <p class="who">Guests scan the code on their table, browse the live menu and order. It lands straight in the kitchen.</p>
+    <ul>
+      <li>Print the QR sheet once from Settings; one code per table</li>
+      <li>Photos, descriptions, veg / non-veg — the menu you maintain, live</li>
+      <li>A dish marked sold out disappears from the guest's menu instantly</li>
+      <li>Guests pay at the counter, as before</li>
+    </ul>
+  </div>
+  <div class="card" id="your-menu">
+    <header><h3>Your menu</h3> <span class="tag">One tap for sold out</span></header>
+    <p class="who">The menu is a board, not a spreadsheet. Change it yourself, any time.</p>
+    <ul>
+      <li>Sections and dishes with prices, photos, descriptions and GST rate</li>
+      <li>Sold out in one tap — the daily action, right on the card</li>
+      <li>Changes are live for waiters and diners the moment you save</li>
+      <li>Odr loads your first menu for you from a photo, PDF or spreadsheet</li>
+    </ul>
+  </div>
+  <div class="card" id="printing">
+    <header><h3>Printing</h3> <span class="tag">58 / 80 mm</span></header>
+    <p class="who">Works with the thermal printer you already have.</p>
+    <ul>
+      <li>Print bills and KOTs from any device through the browser</li>
+      <li>Or send KOTs straight to a network kitchen printer on your Wi-Fi</li>
+      <li>Pick 58 mm or 80 mm paper once; every slip fits</li>
+    </ul>
+  </div>
+  <div class="card" id="sales-and-invoices">
+    <header><h3>Sales and invoices</h3> <span class="tag">Reports</span></header>
+    <p class="who">What came in today, what is still open, and yesterday to compare.</p>
+    <ul>
+      <li>Settled today vs yesterday, still open on the floor, taken so far</li>
+      <li>Every invoice listed and searchable; refreshes every 15 seconds</li>
+      <li>All-outlets view for owners and managers of multi-outlet brands</li>
+    </ul>
+  </div>
+  <div class="card" id="staff-and-roles">
+    <header><h3>Staff and roles</h3> <span class="tag">Owner, manager, cashier, captain, kitchen</span></header>
+    <p class="who">Everyone signs in as themselves. Their role decides what they can see and do.</p>
+    <ul>
+      <li>Add a person in a minute: name, email, password, role</li>
+      <li>Remove someone the day they leave; past orders are untouched</li>
+      <li><a href="/docs/roles">Full roles &amp; access table</a></li>
+    </ul>
+  </div>
+  <div class="card" id="several-outlets-one-account">
+    <header><h3>Several outlets, one account</h3> <span class="tag">Multi-outlet</span></header>
+    <p class="who">Two or three branches of the same brand run on one Odr account.</p>
+    <ul>
+      <li>Owners and managers see every outlet and switch from the outlet name in the top bar</li>
+      <li>Captains, cashiers and kitchen logins belong to one outlet, chosen when they are added</li>
+      <li>Each outlet keeps its own tables, QR codes, printer, GSTIN, address and invoice numbers</li>
+      <li>Share the brand menu across outlets — sold out is per outlet — or give an outlet its own menu</li>
+      <li>Sales across all outlets on one screen, with a total per outlet</li>
+      <li class="no">New outlets are added by the Odr team; pricing is per outlet</li>
+    </ul>
+  </div>
+  <div class="card" id="your-brand-not-ours">
+    <header><h3>Your brand, not ours</h3> <span class="tag">Branding</span></header>
+    <p class="who">The app wears your restaurant's identity on every screen.</p>
+    <ul>
+      <li>Logo, colours, font and light or dark theme, set by the owner</li>
+      <li>Applies to the waiter app and the diner's QR menu alike</li>
+    </ul>
+  </div>
+  <div class="card" id="simple-pricing-no-surprises">
+    <header><h3>Simple pricing, no surprises</h3> <span class="tag">Subscription</span></header>
+    <p class="who">One yearly price per outlet. Everything above is included.</p>
+    <ul>
+      <li>No setup fee, no per-device or per-user charges</li>
+      <li>The Odr team sets up your menu, tables and staff with you</li>
+      <li>A gentle reminder appears in the app a week before renewal</li>
+      <li><a href="/docs/compare">How this compares with traditional POS</a></li>
+    </ul>
+  </div>
+
+  <h2 id="whats-new">What's new</h2>
+  <div class="table-scroll">
+    <table class="new">
+      <thead><tr><th>When</th><th>What changed</th></tr></thead>
+      <tbody>
+        <tr><td>3 Sep 2026</td><td style="text-align:left">Multi-outlet: outlet switcher for owners and managers, staff pinned to an outlet, shared or own menus, sold out per outlet, All-outlets sales view, outlet details editable in Settings.</td></tr>
+        <tr><td>26 Aug 2026</td><td style="text-align:left">Parcels, Zomato and Swiggy quick entry. Table QR ordering for diners. Browser and network thermal printing (58 / 80 mm).</td></tr>
+        <tr><td>24 Aug 2026</td><td style="text-align:left">Owner branding: logo, colours, font, theme. Subscription reminders.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tip">
+    <strong>Something missing for your restaurant?</strong> Tell us. Odr is built with the
+    owners who use it, one shift at a time.
+  </div>
+
+  <footer>Odr · simple restaurant software · <a href="/docs/roles">Roles &amp; access</a> · <a href="/docs/compare">Odr vs traditional POS</a></footer>
+</div>
+</body>
+</html>
