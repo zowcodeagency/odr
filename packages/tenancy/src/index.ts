@@ -8,6 +8,8 @@ export type RequestContext = {
   role: "owner" | "manager" | "captain" | "cashier" | "kitchen";
   /** Membership pin. undefined = every outlet in the tenant (owner / manager). */
   outletId?: string;
+  /** Tenant flag: bills may be kept on the device and imported later. */
+  localBilling?: boolean;
 };
 
 const als = new AsyncLocalStorage<RequestContext>();

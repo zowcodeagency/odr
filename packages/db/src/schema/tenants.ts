@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, numeric, integer, index, date, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, numeric, integer, index, date, jsonb, boolean } from "drizzle-orm/pg-core";
 
 /** Owner-set look of their app: colors, font, logo, theme. NULL = Odr defaults. */
 export interface Branding {
@@ -25,6 +25,8 @@ export const tenants = pgTable("tenants", {
   // Subscription window. NULL = no enforcement (existing demo tenants keep working).
   subscriptionStart: date("subscription_start"),
   subscriptionEnd: date("subscription_end"),
+  // Admin-granted: hold "Settle & bill" to keep the invoice on the device instead of the cloud.
+  localBilling: boolean("local_billing").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

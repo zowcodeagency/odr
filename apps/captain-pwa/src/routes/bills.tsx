@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { Phone, Search } from "lucide-react";
+import { HardDrive, Phone, Search } from "lucide-react";
 import { Money, StatusPill, type OrderStatus } from "@odr/ui";
 import { api, type BillSummary } from "../lib/api.ts";
 import { navigate } from "../lib/router.ts";
 import { useAsync } from "../lib/use-async.ts";
 import { midnight, minutesSince } from "../features/ordering/channels.ts";
 import { canManage, canSeeSales, type Session } from "../lib/session.ts";
+import { localBills } from "../lib/local-db.ts";
 
 
 const sum = (bills: BillSummary[]) =>
@@ -25,11 +26,18 @@ export const BillsRoute = ({ session }: { session: Session }) => {
   // screen — no separate stats endpoint to keep in sync.
   const data = useAsync(
     async () => {
-      const [bills, open] = await Promise.all([
+      const [cloud, open, device] = await Promise.all([
         api.bills(all ? null : outletId, midnight(1).toISOString()),
         // Open orders stay per outlet — the floor is a place, takings are a total.
         api.openOrders(outletId),
+        // Bills this device kept and has not synced — the cloud list lacks them.
+        localBills.list(outletId, midnight(1).toISOString()).catch(() => []),
       ]);
+      const seen = new Set(cloud.map((b) => b.id));
+      const bills: (BillSummary & { local?: boolean })[] = [
+        ...cloud,
+        ...device.filter((b) => !seen.has(b.id) && !b.syncedAt).map((b) => ({ ...b, local: true })),
+      ].sort((a, b) => b.settledAt.localeCompare(a.settledAt));
       return { bills, open };
     },
     [outletId, all],
@@ -238,6 +246,9 @@ export const BillsRoute = ({ session }: { session: Session }) => {
                     {b.customerPhone ? ` · ${b.customerPhone}` : ""}
                   </span>
                 </span>
+                {b.local ? (
+                  <HardDrive size={14} className="shrink-0 text-[var(--accent)]" aria-label="On this device" />
+                ) : null}
                 {b.customerPhone ? (
                   <Phone size={14} className="shrink-0 text-[var(--accent)]" />
                 ) : null}

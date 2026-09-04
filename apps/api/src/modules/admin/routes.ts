@@ -43,6 +43,7 @@ const createOutletSchema = z.object({
 });
 
 const patchOutletSchema = z.object({ isActive: z.boolean() });
+const patchRestaurantSchema = z.object({ localBilling: z.boolean() });
 
 const importSchema = z
   .union([
@@ -112,6 +113,11 @@ export const buildAdminRoutes = (svc: AdminService) => {
   });
 
   r.get("/restaurants", async (c) => c.json({ restaurants: await svc.listRestaurants() }));
+
+  r.patch("/restaurants/:tenantId", async (c) => {
+    const body = parse(patchRestaurantSchema, await c.req.json());
+    return c.json(await svc.setLocalBilling(c.req.param("tenantId"), body.localBilling));
+  });
 
   r.post("/restaurants/:tenantId/topups", async (c) => {
     const body = parse(topupSchema, await c.req.json());

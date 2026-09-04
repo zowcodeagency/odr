@@ -6,6 +6,7 @@ export type TenantRow = {
   slug: string;
   subscriptionStart: string | null;
   subscriptionEnd: string | null;
+  localBilling: boolean;
   createdAt: string;
   outletCount: number;
 };
@@ -41,6 +42,7 @@ export interface AdminRepo {
   listTenants(): Promise<TenantRow[]>;
   tenantById(id: string): Promise<TenantRow | null>;
   setSubscriptionEnd(tenantId: string, end: string): Promise<void>;
+  setLocalBilling(tenantId: string, on: boolean): Promise<boolean>;
 
   listOutlets(tenantId: string): Promise<OutletRow[]>;
   outletCodeExists(tenantId: string, code: string): Promise<boolean>;

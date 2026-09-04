@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Loader2, Printer, QrCode, Trash2, UserPlus, Wifi } from "lucide-react";
+import { CloudUpload, HardDrive, Loader2, Printer, QrCode, Trash2, UserPlus, Wifi } from "lucide-react";
 import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Input } from "@odr/ui";
 import { ApiError, api, errorCode, type Staff, type Table } from "../lib/api.ts";
 import { navigate } from "../lib/router.ts";
@@ -8,6 +8,8 @@ import { toast } from "../lib/toast.tsx";
 import { parseLabels } from "../features/tables/labels.ts";
 import { QrImage, tableQrUrl } from "../features/qr/qr-image.tsx";
 import { canManage, outletPatch, patchSession, type Session } from "../lib/session.ts";
+import { bytesOf, formatBytes, localBills, type LocalBill } from "../lib/local-db.ts";
+import { upiPayUrl } from "../features/billing/upi.ts";
 
 const Section = ({
   title,
@@ -42,7 +44,7 @@ const OutletSection = ({ session }: { session: Session }) => {
   // Fetch the full row: the session only carries the address as one line.
   const q = useAsync(() => api.outlets().then((all) => all.find((o) => o.id === session.outletId) ?? null), [session.outletId]);
   const [form, setForm] = useState<{
-    name: string; gstin: string; line1: string; line2: string; city: string; state: string; pincode: string; invoicePrefix: string;
+    name: string; gstin: string; line1: string; line2: string; city: string; state: string; pincode: string; invoicePrefix: string; upiId: string;
   } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -58,6 +60,7 @@ const OutletSection = ({ session }: { session: Session }) => {
         state: o.address?.state === "-" ? "" : (o.address?.state ?? ""),
         pincode: o.address?.pincode === "-" ? "" : (o.address?.pincode ?? ""),
         invoicePrefix: o.invoicePrefix ?? "INV",
+        upiId: o.upiId ?? "",
       });
     }
   }, [o, form]);
@@ -78,6 +81,7 @@ const OutletSection = ({ session }: { session: Session }) => {
           country: o.address?.country ?? "IN",
         },
         invoicePrefix: form.invoicePrefix.trim().toUpperCase() || "INV",
+        upiId: form.upiId.trim() || null,
       });
       // Bills print the header from the session — keep it current.
       patchSession(outletPatch(updated));
@@ -119,6 +123,19 @@ const OutletSection = ({ session }: { session: Session }) => {
           <Field label="State"><Input value={form.state} onChange={set("state")} className="h-11" /></Field>
           <Field label="PIN code"><Input value={form.pincode} onChange={set("pincode")} inputMode="numeric" className="h-11" /></Field>
           <Field label="Invoice prefix"><Input value={form.invoicePrefix} onChange={set("invoicePrefix")} maxLength={8} className="h-11 font-mono uppercase" /></Field>
+          <Field label="UPI ID for payments">
+            <Input value={form.upiId} onChange={set("upiId")} placeholder="shop@okaxis" autoCapitalize="none" className="h-11 font-mono" />
+          </Field>
+          <p className="text-[12px] text-[var(--fg-tertiary)] sm:col-span-2 -mt-2">
+            With a UPI ID, every printed bill carries a scan-to-pay code with the exact amount filled in.
+            Find yours in PhonePe, Google Pay or Paytm under your profile.
+          </p>
+          {form.upiId.trim() ? (
+            <div className="sm:col-span-2 flex items-center gap-4 p-3 rounded-[var(--radius-2)] ring-1 ring-[var(--line-default)] bg-white">
+              <QrImage value={upiPayUrl({ upiId: form.upiId.trim(), payee: form.name, amountMinor: "10000", note: "Preview" })} size={96} />
+              <p className="text-[13px] text-black">Preview for ₹100.00 — scan with any UPI app to check it opens the right account before you save.</p>
+            </div>
+          ) : null}
           <Button type="submit" size="lg" disabled={busy} className="sm:col-span-2 sm:w-auto sm:justify-self-start">
             {busy ? <Loader2 size={16} className="animate-spin" /> : null} Save
           </Button>
@@ -128,13 +145,14 @@ const OutletSection = ({ session }: { session: Session }) => {
   );
 };
 
-type SettingsTab = "outlet" | "tables" | "printing" | "staff";
+type SettingsTab = "outlet" | "tables" | "printing" | "staff" | "device";
 
 const TABS: { key: SettingsTab; label: string }[] = [
   { key: "outlet", label: "Outlet" },
   { key: "tables", label: "Tables" },
   { key: "printing", label: "Printing" },
   { key: "staff", label: "Staff" },
+  { key: "device", label: "This device" },
 ];
 
 export const SettingsRoute = ({ session }: { session: Session }) => {
@@ -166,7 +184,7 @@ export const SettingsRoute = ({ session }: { session: Session }) => {
         className="flex p-1 gap-1 rounded-[var(--radius-pill)] bg-[var(--bg-surface-2)]
                    ring-1 ring-[var(--line-subtle)] self-start w-full sm:w-auto"
       >
-        {TABS.map((t) => (
+        {TABS.filter((t) => t.key !== "device" || session.localBilling).map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
@@ -192,6 +210,7 @@ export const SettingsRoute = ({ session }: { session: Session }) => {
       ) : null}
       {tab === "printing" ? <PrinterSection session={session} /> : null}
       {tab === "staff" ? <StaffSection session={session} /> : null}
+      {tab === "device" ? <DeviceSection /> : null}
     </div>
   );
 };
@@ -341,6 +360,95 @@ const QrSection = ({ session, q }: { session: Session; q: Async<Table[]> }) => {
           </div>
         )
       ) : null}
+    </Section>
+  );
+};
+
+/* ---------------------------------------------------------------- device -- */
+
+/** Bills kept on this device by holding "Settle & bill": how much, sync, or wipe. */
+const DeviceSection = () => {
+  const q = useAsync(() => localBills.all(), []);
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState("");
+  const bills = q.data ?? [];
+  const pending = bills.filter((b) => !b.syncedAt);
+  const failed = pending.filter((b) => b.syncError);
+
+  const sync = async () => {
+    setBusy(true);
+    let ok = 0;
+    try {
+      for (const [i, b] of pending.entries()) {
+        setProgress(`Sending ${i + 1} of ${pending.length}…`);
+        const next: LocalBill = { ...b };
+        delete next.syncError;
+        try {
+          await api.importBill(b);
+          next.syncedAt = new Date().toISOString();
+          ok++;
+        } catch (e) {
+          next.syncError = e instanceof Error ? e.message : "Sync failed";
+        }
+        await localBills.put(next);
+      }
+      toast(ok === pending.length ? `${ok} bill${ok === 1 ? "" : "s"} now in the cloud` : `${ok} synced, ${pending.length - ok} failed — see below`);
+    } finally {
+      setBusy(false);
+      setProgress("");
+      q.reload();
+    }
+  };
+
+  const clear = async () => {
+    const warn = pending.length
+      ? `${pending.length} bill${pending.length === 1 ? " has" : "s have"} never been sent to the cloud and will be lost for good. Clear anyway?`
+      : `Remove ${bills.length} bill${bills.length === 1 ? "" : "s"} from this device? They stay in the cloud.`;
+    if (!window.confirm(warn)) return;
+    await localBills.clear();
+    toast("Device storage cleared");
+    q.reload();
+  };
+
+  return (
+    <Section title="Bills on this device" hint="Hold Settle & bill for five seconds and the invoice is saved here instead of the cloud.">
+      <div className="grid grid-cols-3 gap-px bg-[var(--line-default)] rounded-[var(--radius-2)] ring-1 ring-[var(--line-default)] overflow-hidden">
+        {[
+          ["Bills", String(bills.length)],
+          ["Not in cloud", String(pending.length)],
+          ["Space used", formatBytes(bytesOf(bills))],
+        ].map(([k, v]) => (
+          <div key={k} className="bg-[var(--bg-surface)] p-4">
+            <p className="text-[12px] text-[var(--fg-tertiary)]">{k}</p>
+            <p className="mt-1 text-[20px] font-semibold font-mono leading-none">{q.loading && !q.data ? "…" : v}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Button size="lg" onClick={() => void sync()} disabled={busy || pending.length === 0}>
+          {busy ? <Loader2 size={16} className="animate-spin" /> : <CloudUpload size={16} />}
+          {progress || `Sync ${pending.length || ""} to cloud`}
+        </Button>
+        <Button size="lg" variant="outline" className="text-[var(--status-voided)]" onClick={() => void clear()} disabled={busy || bills.length === 0}>
+          <Trash2 size={16} /> Clear this device
+        </Button>
+      </div>
+
+      {failed.length > 0 ? (
+        <ul className="mt-4 text-[13px] space-y-1">
+          {failed.map((b) => (
+            <li key={b.id} className="flex items-start gap-2 text-[var(--status-voided)]">
+              <HardDrive size={14} className="mt-0.5 shrink-0" />
+              <span><span className="font-mono">{b.invoiceNumber}</span> — {b.syncError}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="mt-4 text-[12px] text-[var(--fg-muted)]">
+        Bills here open instantly and never leave this phone until you sync. Syncing sends only the invoice number,
+        time, total and customer details; the cloud re-prices the same order and keeps your number.
+      </p>
     </Section>
   );
 };

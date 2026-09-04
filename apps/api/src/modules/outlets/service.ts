@@ -3,7 +3,7 @@ import { ForbiddenError, NotFoundError, ValidationError } from "@odr/shared";
 import { can } from "@odr/auth";
 import type { EventBus } from "@odr/events";
 import { assertOutletScope, getContext } from "@odr/tenancy";
-import { isValidGstin, isValidPaperWidth, type Outlet, type OutletSettings } from "./domain.ts";
+import { isValidGstin, isValidPaperWidth, isValidUpiId, type Outlet, type OutletSettings } from "./domain.ts";
 import type { OutletsRepo } from "./ports.ts";
 
 export type OutletsServiceDeps = { repo: OutletsRepo; events: EventBus };
@@ -38,6 +38,9 @@ export const makeOutletsService = ({ repo, events }: OutletsServiceDeps) => ({
     }
     if (settings.gstin && !isValidGstin(settings.gstin)) {
       throw new ValidationError("invalid GSTIN", { gstin: settings.gstin });
+    }
+    if (settings.upiId && !isValidUpiId(settings.upiId)) {
+      throw new ValidationError("invalid UPI ID", { upiId: settings.upiId });
     }
     const outlet = await repo.updateSettings(ctx.tenantId, outletId, settings);
     if (!outlet) throw new NotFoundError("outlet", outletId);

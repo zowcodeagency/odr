@@ -32,6 +32,7 @@ const lineSchema = z.object({
 });
 
 const addItemsSchema = z.object({ lines: z.array(lineSchema).min(1) });
+const settleSchema = z.object({ localBill: z.boolean().optional() });
 
 const parse = <S extends z.ZodTypeAny>(s: S, body: unknown): z.infer<S> => {
   const r = s.safeParse(body);
@@ -83,8 +84,11 @@ export const buildOrderingRoutes = (svc: OrderingService) => {
   r.post("/orders/:id/fire-kot", async (c) =>
     c.json({ order: serialize(await svc.fireKot({ orderId: c.req.param("id") })) }));
 
-  r.post("/orders/:id/settle", async (c) =>
-    c.json({ order: serialize(await svc.settle({ orderId: c.req.param("id") })) }));
+  r.post("/orders/:id/settle", async (c) => {
+    // Body is optional — the plain settle sends none.
+    const body = parse(settleSchema, await c.req.json().catch(() => ({})));
+    return c.json({ order: serialize(await svc.settle({ orderId: c.req.param("id"), ...body })) });
+  });
 
   r.post("/orders/:id/void", async (c) =>
     c.json({ order: serialize(await svc.void({ orderId: c.req.param("id") })) }));

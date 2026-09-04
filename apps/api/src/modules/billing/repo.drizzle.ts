@@ -102,27 +102,30 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
 
   async reserveAndCreate(input, prefix) {
     return db.transaction(async (tx) => {
-      // Lock the outlet row to serialize invoice numbering for this (outlet, fiscalYear).
-      const locked = await tx.execute(sql`
-        SELECT invoice_counter FROM outlets
-        WHERE id = ${input.outletId} AND tenant_id = ${input.tenantId}
-        FOR UPDATE
-      `);
-      // Drizzle's execute returns driver-shaped rows; bun-sql gives us an array.
-      const counterRow = (locked as unknown as { invoice_counter: string }[])[0];
-      if (!counterRow) throw new ConflictError("outlet vanished mid-tx");
+      let invoiceNumber = input.invoiceNumber;
+      if (!invoiceNumber) {
+        // Lock the outlet row to serialize invoice numbering for this (outlet, fiscalYear).
+        const locked = await tx.execute(sql`
+          SELECT invoice_counter FROM outlets
+          WHERE id = ${input.outletId} AND tenant_id = ${input.tenantId}
+          FOR UPDATE
+        `);
+        // Drizzle's execute returns driver-shaped rows; bun-sql gives us an array.
+        const counterRow = (locked as unknown as { invoice_counter: string }[])[0];
+        if (!counterRow) throw new ConflictError("outlet vanished mid-tx");
 
-      // The invoice_counter is naive — global per outlet. Per-fiscal-year
-      // counters live in a future iteration when the volume justifies an
-      // (outlet_id, fiscal_year) sequence table. For MVP, prefix the format
-      // with fiscalYear so collisions across years are still impossible.
-      const next = Number(counterRow.invoice_counter) + 1;
-      const invoiceNumber = formatInvoiceNumber(prefix, input.fiscalYear, next);
+        // The invoice_counter is naive — global per outlet. Per-fiscal-year
+        // counters live in a future iteration when the volume justifies an
+        // (outlet_id, fiscal_year) sequence table. For MVP, prefix the format
+        // with fiscalYear so collisions across years are still impossible.
+        const next = Number(counterRow.invoice_counter) + 1;
+        invoiceNumber = formatInvoiceNumber(prefix, input.fiscalYear, next);
 
-      await tx
-        .update(outlets)
-        .set({ invoiceCounter: String(next) })
-        .where(and(eq(outlets.id, input.outletId), eq(outlets.tenantId, input.tenantId)));
+        await tx
+          .update(outlets)
+          .set({ invoiceCounter: String(next) })
+          .where(and(eq(outlets.id, input.outletId), eq(outlets.tenantId, input.tenantId)));
+      }
 
       const [billRow] = await tx
         .insert(bills)
@@ -140,6 +143,7 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
           taxBreakdown: input.taxBreakdown,
           customerName: input.customerName ?? null,
           customerPhone: input.customerPhone ?? null,
+          ...(input.settledAt ? { settledAt: new Date(input.settledAt) } : {}),
         })
         .returning();
       if (!billRow) throw new Error("failed to insert bill");

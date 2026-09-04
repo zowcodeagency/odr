@@ -25,7 +25,8 @@ export const billingModule = ({ db, events, country, orders }: BillingModuleDeps
 
   // Auto-settle: when ordering settles an order, materialize the bill.
   // Idempotent — service short-circuits if a bill already exists for this order.
-  events.subscribe<{ orderId: string }>("order.settled", async (e) => {
+  events.subscribe<{ orderId: string; localBill?: boolean }>("order.settled", async (e) => {
+    if (e.payload.localBill) return; // the device holds this invoice until it syncs
     try {
       await runWithContext(
         { tenantId: asTenantId(e.tenantId), userId: asUserId(SYSTEM_USER_ID), role: "owner" },

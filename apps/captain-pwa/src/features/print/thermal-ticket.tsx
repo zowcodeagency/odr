@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { QrImage } from "../qr/qr-image.tsx";
 
 /**
  * The only thing that reaches paper.
@@ -26,6 +27,7 @@ export const ThermalTicket = ({
   lines,
   totals = [],
   grand,
+  qr,
   footer,
 }: {
   paperWidth: number;
@@ -35,6 +37,8 @@ export const ThermalTicket = ({
   lines: TicketLine[];
   totals?: [string, string][];
   grand?: [string, string];
+  /** A pay-by-scan code printed under the total. */
+  qr?: { value: string; caption: string };
   footer?: string;
 }) => (
   <div
@@ -91,6 +95,13 @@ export const ThermalTicket = ({
           </div>
         ) : null}
       </>
+    ) : null}
+
+    {qr ? (
+      <div className="mt-2 text-center">
+        <QrImage value={qr.value} size={paperWidth === 58 ? 110 : 140} className="mx-auto" />
+        <div className="text-[10px]">{qr.caption}</div>
+      </div>
     ) : null}
 
     {footer ? (

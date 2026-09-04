@@ -34,11 +34,6 @@ export type Bill = {
   lines: BillLine[];
 };
 
-/**
- * Indian fiscal year: 1 April → 31 March (e.g. "2026-27" runs 2026-04-01..2027-03-31).
- * Returns the year-of-service for invoice numbering. Saudi (and most others)
- * follow calendar year — call this with country="SA" to get e.g. "2026".
- */
 /** Row shape for the invoice list — no lines, so one query serves the page. */
 export type BillSummary = {
   id: string;
@@ -52,16 +47,7 @@ export type BillSummary = {
   settledAt: string;
 };
 
-export const fiscalYearFor = (date: Date, country: string): string => {
-  const y = date.getUTCFullYear();
-  if (country === "IN") {
-    const aprilOrLater = date.getUTCMonth() >= 3;
-    const start = aprilOrLater ? y : y - 1;
-    const end = (start + 1) % 100;
-    return `${start}-${String(end).padStart(2, "0")}`;
-  }
-  return String(y);
-};
+export { fiscalYearFor } from "@odr/tax";
 
 export const formatInvoiceNumber = (prefix: string, fiscalYear: string, seq: number): string =>
   `${prefix}/${fiscalYear}/${String(seq).padStart(5, "0")}`;

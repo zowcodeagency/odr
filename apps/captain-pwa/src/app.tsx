@@ -37,8 +37,13 @@ export const App = () => {
     void api
       .me()
       .then((me) => {
-        if (me.subscriptionEndsAt !== session.subscriptionEndsAt) {
-          patchSession({ subscriptionEndsAt: me.subscriptionEndsAt });
+        const flags = { localBilling: me.localBilling ?? false, taxCountry: me.taxCountry ?? "IN" };
+        if (
+          me.subscriptionEndsAt !== session.subscriptionEndsAt ||
+          flags.localBilling !== (session.localBilling ?? false) ||
+          flags.taxCountry !== session.taxCountry
+        ) {
+          patchSession({ subscriptionEndsAt: me.subscriptionEndsAt, ...flags });
           setSession(getSession());
         }
       })

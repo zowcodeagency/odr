@@ -19,6 +19,7 @@ const outlet = (id: string, over: Partial<Outlet> = {}): Outlet => ({
   name: id === OUTLET ? "Central" : "Airport",
   code: id.slice(0, 4),
   gstin: null,
+  upiId: null,
   address: { line1: "-", city: "-", state: "-", pincode: "-", country: "IN" },
   invoicePrefix: "INV",
   paperWidth: 80,

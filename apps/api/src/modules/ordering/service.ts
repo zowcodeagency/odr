@@ -108,9 +108,11 @@ export const makeOrderingService = ({ repo, events, outletActive }: OrderingServ
     return saved;
   },
 
-  async settle(input: { orderId: string }): Promise<Order> {
+  /** `localBill`: the device keeps the invoice; the cloud must not auto-bill this order. */
+  async settle(input: { orderId: string; localBill?: boolean }): Promise<Order> {
     const ctx = getContext();
     if (!can(ctx.role, "billing:settle")) throw new ForbiddenError("cannot settle");
+    if (input.localBill && !ctx.localBilling) throw new ForbiddenError("local billing is not enabled");
 
     const order = await load(ctx.tenantId, input.orderId);
 
@@ -119,7 +121,7 @@ export const makeOrderingService = ({ repo, events, outletActive }: OrderingServ
     order.settledAt = new Date().toISOString();
 
     const saved = await repo.save(order);
-    await emit(events, "order.settled", ctx.tenantId, { orderId: order.id });
+    await emit(events, "order.settled", ctx.tenantId, { orderId: order.id, localBill: input.localBill === true });
     return saved;
   },
 

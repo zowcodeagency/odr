@@ -47,7 +47,7 @@ const fakeRepo = (initialCounter = 0) => {
         id: input.id,
         outletId: input.outletId,
         orderId: input.orderId,
-        invoiceNumber: formatInvoiceNumber(prefix, input.fiscalYear, counter),
+        invoiceNumber: input.invoiceNumber || formatInvoiceNumber(prefix, input.fiscalYear, counter),
         fiscalYear: input.fiscalYear,
         currency: input.currency as Bill["currency"],
         customerName: input.customerName ?? null,
@@ -56,7 +56,7 @@ const fakeRepo = (initialCounter = 0) => {
         taxTotalMinor: input.taxTotalMinor,
         grandTotalMinor: input.grandTotalMinor,
         taxBreakdown: input.taxBreakdown,
-        settledAt: new Date().toISOString(),
+        settledAt: input.settledAt ?? new Date().toISOString(),
         lines: input.lines.map((l, i) => ({ ...l, id: `bl-${i}` })),
       };
       bills.push(bill);
@@ -272,4 +272,58 @@ test("all-outlets bill list is for unpinned roles only", async () => {
     await expect(svc.list({})).rejects.toThrow(/out of scope/);
     await expect(svc.list({ outletId: OUTLET })).resolves.toEqual([]);
   });
+});
+
+// ------------------------------------------------------ device-side bills
+
+const localCtx = { ...ctx, localBilling: true };
+const deviceBill = {
+  id: "55555555-5555-5555-5555-555555555555",
+  orderId: "o-local",
+  invoiceNumber: "MC/2026-27/LK7-00001",
+  fiscalYear: "2026-27",
+  settledAt: "2026-09-04T10:00:00.000Z",
+  customerName: "Rakesh",
+};
+
+test("import keeps the device's id, number and time, and re-prices the order", async () => {
+  const { repo, bills } = fakeRepo();
+  const svc = makeBillingService({
+    repo,
+    events: new InMemoryEventBus(),
+    country: () => "IN",
+    orders: stubOrders([
+      sampleOrder("o-local", [{ itemId: "i-1", itemName: "Masala Dosa", qty: 2, unitPriceMinor: 12000n, taxClass: "GST_5" }]),
+    ]),
+  });
+  await runWithContext(localCtx, async () => {
+    const bill = await svc.importLocalBill({ ...deviceBill, grandTotalMinor: 25200n });
+    expect(bill.id).toBe(deviceBill.id);
+    expect(bill.invoiceNumber).toBe(deviceBill.invoiceNumber);
+    expect(bill.customerName).toBe("Rakesh");
+    expect(bill.grandTotalMinor).toBe(25200n);
+    // Second sync of the same bill is a no-op.
+    const again = await svc.importLocalBill({ ...deviceBill, grandTotalMinor: 25200n });
+    expect(again.id).toBe(bill.id);
+    expect(bills).toHaveLength(1);
+  });
+});
+
+test("import refuses a total the cloud cannot reproduce, and tenants without the flag", async () => {
+  const { repo, bills } = fakeRepo();
+  const svc = makeBillingService({
+    repo,
+    events: new InMemoryEventBus(),
+    country: () => "IN",
+    orders: stubOrders([
+      sampleOrder("o-local", [{ itemId: "i-1", itemName: "Masala Dosa", qty: 2, unitPriceMinor: 12000n, taxClass: "GST_5" }]),
+    ]),
+  });
+  await runWithContext(localCtx, async () => {
+    await expect(svc.importLocalBill({ ...deviceBill, grandTotalMinor: 25000n })).rejects.toThrow(/differs/);
+  });
+  await runWithContext(ctx, async () => {
+    await expect(svc.importLocalBill({ ...deviceBill, grandTotalMinor: 25200n })).rejects.toThrow(/not enabled/);
+  });
+  expect(bills).toHaveLength(0);
 });

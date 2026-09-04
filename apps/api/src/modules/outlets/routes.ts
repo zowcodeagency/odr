@@ -23,6 +23,8 @@ const settingsSchema = z
     gstin: z.string().trim().length(15).nullable(),
     address: addressSchema,
     invoicePrefix: z.string().trim().min(1).max(8),
+    // null removes the payment QR from the bill.
+    upiId: z.string().trim().min(3).max(100).nullable(),
   })
   .partial()
   .refine((p) => Object.keys(p).length > 0, "nothing to update");

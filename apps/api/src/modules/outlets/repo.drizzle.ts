@@ -15,6 +15,7 @@ const toDomain = (r: typeof outlets.$inferSelect): Outlet => ({
   printerIp: r.printerIp,
   printerPort: r.printerPort,
   publicToken: r.publicToken,
+  upiId: r.upiId,
   isActive: r.isActive,
   menuMode: r.menuMode,
 });
@@ -53,6 +54,7 @@ export const drizzleOutletsRepo = (db: DB): OutletsRepo => {
         ...(settings.gstin !== undefined ? { gstin: settings.gstin } : {}),
         ...(settings.address !== undefined ? { address: settings.address } : {}),
         ...(settings.invoicePrefix !== undefined ? { invoicePrefix: settings.invoicePrefix } : {}),
+        ...(settings.upiId !== undefined ? { upiId: settings.upiId } : {}),
       })
       .where(and(eq(outlets.tenantId, tenantId), eq(outlets.id, outletId)))
       .returning();

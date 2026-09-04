@@ -12,6 +12,18 @@ const settleSchema = z.object({
   customerPhone: z.string().trim().min(6).max(20).optional(),
 });
 
+// What the device kept: identity, number and the total it printed. Lines are re-priced from the order.
+const importSchema = z.object({
+  id: z.string().uuid(),
+  orderId: z.string().uuid(),
+  invoiceNumber: z.string().trim().min(3).max(40),
+  fiscalYear: z.string().trim().min(4).max(9),
+  settledAt: z.string().datetime(),
+  grandTotalMinor: z.string().regex(/^\d+$/).transform((v) => BigInt(v)),
+  customerName: z.string().trim().min(1).max(80).optional(),
+  customerPhone: z.string().trim().min(6).max(20).optional(),
+});
+
 const parse = <S extends z.ZodTypeAny>(s: S, body: unknown): z.infer<S> => {
   const r = s.safeParse(body);
   if (!r.success) throw new ValidationError("invalid payload", { issues: r.error.issues });
@@ -42,6 +54,12 @@ export const buildBillingRoutes = (svc: BillingService) => {
   r.post("/bills", async (c) => {
     const body = parse(settleSchema, await c.req.json());
     const bill = await svc.settleOrderToBill(body);
+    return c.json({ bill: serialize(bill) }, 201);
+  });
+
+  r.post("/bills/import", async (c) => {
+    const body = parse(importSchema, await c.req.json());
+    const bill = await svc.importLocalBill(body);
     return c.json({ bill: serialize(bill) }, 201);
   });
 

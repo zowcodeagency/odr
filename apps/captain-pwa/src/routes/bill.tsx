@@ -1,4 +1,4 @@
-import { ArrowLeft, Printer, Wifi } from "lucide-react";
+import { ArrowLeft, HardDrive, Printer, Wifi } from "lucide-react";
 import { Button, IconButton, Receipt, formatMinor } from "@odr/ui";
 import { api, errorCode } from "../lib/api.ts";
 import { navigate } from "../lib/router.ts";
@@ -6,6 +6,8 @@ import { useAsync } from "../lib/use-async.ts";
 import { toast } from "../lib/toast.tsx";
 import { ThermalTicket } from "../features/print/thermal-ticket.tsx";
 import type { Session } from "../lib/session.ts";
+import { localBills } from "../lib/local-db.ts";
+import { upiPayUrl } from "../features/billing/upi.ts";
 
 /** Tax strategies return fractions (0.025); the receipt speaks basis points. */
 const toBps = (rate: number) => Math.round(rate * 10000);
@@ -18,10 +20,12 @@ export const BillRoute = ({
   session: Session;
 }) => {
   const q = useAsync(async () => {
-    const bill = await api.bill(billId);
+    // Device-kept bills first: instant, and the cloud has never seen them.
+    const local = await localBills.get(billId).catch(() => null);
+    const bill = local ?? (await api.bill(billId));
     // The bill carries no table label — the order it settled does.
     const order = await api.order(bill.orderId).catch(() => null);
-    return { bill, order };
+    return { bill, order, local: local !== null && !local.syncedAt };
   }, [billId]);
 
   if (q.loading && !q.data)
@@ -36,10 +40,13 @@ export const BillRoute = ({
       </div>
     );
 
-  const { bill, order } = q.data;
+  const { bill, order, local } = q.data;
   const tableLabel = order?.tableLabel ?? "—";
   const currency = bill.currency;
   const money = (m: string) => formatMinor(m, currency, { withSymbol: false });
+  const upi = session.outletUpiId
+    ? upiPayUrl({ upiId: session.outletUpiId, payee: session.outletName, amountMinor: bill.grandTotalMinor, note: bill.invoiceNumber })
+    : null;
 
   const networkPrint = async () => {
     try {
@@ -70,11 +77,16 @@ export const BillRoute = ({
             <p className="mt-0.5 text-[13px] text-[var(--fg-tertiary)]">
               Settled · {tableLabel} · {new Date(bill.settledAt).toLocaleString("en-GB")}
             </p>
+            {local ? (
+              <p className="mt-1 inline-flex items-center gap-1.5 text-[12px] text-[var(--accent)]">
+                <HardDrive size={13} /> Saved on this device only — sync from Settings
+              </p>
+            ) : null}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="lg" onClick={() => void networkPrint()}>
+          <Button variant="outline" size="lg" onClick={() => void networkPrint()} disabled={local}>
             <Wifi size={15} /> Kitchen printer
           </Button>
           <Button size="lg" onClick={() => window.print()}>
@@ -139,6 +151,7 @@ export const BillRoute = ({
           ),
         ]}
         grand={["TOTAL", formatMinor(bill.grandTotalMinor, currency)]}
+        {...(upi ? { qr: { value: upi, caption: `Scan to pay ${formatMinor(bill.grandTotalMinor, currency)} · ${session.outletUpiId}` } } : {})}
         footer="Thank you · come again"
       />
     </div>

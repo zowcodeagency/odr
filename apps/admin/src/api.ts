@@ -40,6 +40,8 @@ export type Restaurant = {
   daysRemaining: number | null;
   status: Status;
   outletCount?: number;
+  /** Special customers: bills may be kept on the device (hold Settle & bill). */
+  localBilling?: boolean;
 };
 
 export type AdminOutlet = {
@@ -157,6 +159,8 @@ export const api = {
     call<{ outlets: AdminOutlet[] }>(key, `/restaurants/${id}/outlets`).then((r) => r.outlets),
   createOutlet: (key: string, id: string, p: CreateOutletPayload) =>
     call<{ outletId: string; code: string }>(key, `/restaurants/${id}/outlets`, p),
+  setLocalBilling: (key: string, id: string, localBilling: boolean) =>
+    call<{ tenantId: string; localBilling: boolean }>(key, `/restaurants/${id}`, { localBilling }, "PATCH"),
   setOutletActive: (key: string, id: string, outletId: string, isActive: boolean) =>
     call<{ outletId: string; isActive: boolean }>(key, `/restaurants/${id}/outlets/${outletId}`, { isActive }, "PATCH"),
   importMenu: (key: string, id: string, payload: unknown, outletId?: string) =>

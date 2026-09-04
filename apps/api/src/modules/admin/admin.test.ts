@@ -126,6 +126,7 @@ test("import reuses an existing category by name and only counts new ones", asyn
       id: "t-1",
       name: "X",
       slug: "x",
+      localBilling: false,
       subscriptionStart: null,
       subscriptionEnd: null,
       createdAt: "",

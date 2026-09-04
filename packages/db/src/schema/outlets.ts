@@ -29,6 +29,8 @@ export const outlets = pgTable(
     printerIp: text("printer_ip"),
     printerPort: integer("printer_port").notNull().default(9100),
     publicToken: text("public_token"),
+    // UPI ID (VPA) printed on the bill as a pay-this-amount QR. NULL = no QR.
+    upiId: text("upi_id"),
     // Closed branches stay for their bills but disappear from pickers and refuse new orders.
     isActive: boolean("is_active").notNull().default(true),
     menuMode: text("menu_mode", { enum: MENU_MODES }).notNull().default("shared"),

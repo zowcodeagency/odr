@@ -5,8 +5,11 @@ export type BillInsert = {
   tenantId: string;
   outletId: string;
   orderId: string;
+  /** Empty = reserve the next number from the outlet counter; set = a device-issued number, stored as-is. */
   invoiceNumber: string;
   fiscalYear: string;
+  /** Defaults to now; a device-side bill carries the moment it was printed. */
+  settledAt?: string;
   currency: string;
   subtotalMinor: bigint;
   taxTotalMinor: bigint;

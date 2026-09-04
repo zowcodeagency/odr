@@ -20,6 +20,7 @@ export type Outlet = {
   printerIp: string | null;
   printerPort: number;
   publicToken: string | null;
+  upiId: string | null;
   isActive: boolean;
   menuMode: MenuMode;
 };
@@ -35,7 +36,12 @@ export type OutletSettings = {
   gstin?: string | null;
   address?: Address;
   invoicePrefix?: string;
+  upiId?: string | null;
 };
+
+/** A UPI ID (VPA) looks like shop@okaxis or 9845012345@ybl. */
+const UPI_RE = /^[a-z0-9._-]{2,64}@[a-z][a-z0-9]{1,30}$/i;
+export const isValidUpiId = (s: string): boolean => UPI_RE.test(s);
 
 /** Thermal rolls come in two sizes; anything else is a typo. */
 export const PAPER_WIDTHS = [58, 80] as const;

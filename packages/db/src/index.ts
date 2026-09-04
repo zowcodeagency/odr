@@ -53,12 +53,19 @@ export * as schema from "./schema/index.ts";
  * ponytail: one extra SELECT per authenticated request — cache it if it shows up in latency.
  */
 export async function subscriptionEndOf(tenantId: string): Promise<string | null> {
+  return (await tenantGateOf(tenantId)).subscriptionEnd;
+}
+
+/** Everything the auth middleware needs from the tenant row, in one SELECT. */
+export async function tenantGateOf(
+  tenantId: string,
+): Promise<{ subscriptionEnd: string | null; localBilling: boolean }> {
   const rows = await db
-    .select({ end: tenants.subscriptionEnd })
+    .select({ subscriptionEnd: tenants.subscriptionEnd, localBilling: tenants.localBilling })
     .from(tenants)
     .where(eq(tenants.id, tenantId))
     .limit(1);
-  return rows[0]?.end ?? null;
+  return rows[0] ?? { subscriptionEnd: null, localBilling: false };
 }
 
 /**

@@ -56,6 +56,9 @@ export const buildPrivateRoutes = (svc: IdentityService) => {
       role: ctx.role,
       memberships,
       subscriptionEndsAt: await svc.subscriptionEndsAt(ctx.tenantId),
+      localBilling: ctx.localBilling ?? false,
+      // The country the billing module taxes with — a device-side bill must match it.
+      taxCountry: process.env.DEFAULT_COUNTRY ?? "IN",
     });
   });
   return r;

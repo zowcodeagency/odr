@@ -91,12 +91,18 @@ export const makeAdminService = ({ repo, menu }: AdminServiceDeps) => ({
       slug: t.slug,
       subscriptionStart: t.subscriptionStart,
       subscriptionEnd: t.subscriptionEnd,
+      localBilling: t.localBilling,
       createdAt: t.createdAt,
       outletCount: t.outletCount,
       ...subscriptionStatus(t.subscriptionEnd),
     }));
   },
 
+  /** Special customers only: lets the app keep bills on the device (hold Settle & bill). */
+  async setLocalBilling(tenantId: string, on: boolean) {
+    if (!(await repo.setLocalBilling(tenantId, on))) throw new NotFoundError("tenant", tenantId);
+    return { tenantId, localBilling: on };
+  },
   listOutlets: async (tenantId: string) => {
     if (!(await repo.tenantById(tenantId))) throw new NotFoundError("tenant", tenantId);
     return repo.listOutlets(tenantId);

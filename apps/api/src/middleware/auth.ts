@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from "hono";
 import { verifyAccessToken } from "@odr/auth";
-import { membershipOf, subscriptionEndOf } from "@odr/db";
+import { membershipOf, tenantGateOf } from "@odr/db";
 import { DomainError, UnauthorizedError, asTenantId, asUserId } from "@odr/shared";
 import { runWithContext } from "@odr/tenancy";
 import { isExpired } from "../modules/admin/domain.ts";
@@ -22,7 +22,8 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
   if (!m) throw new UnauthorizedError("membership revoked");
 
   // Subscription gate — null end date means the tenant isn't enforced.
-  if (isExpired(await subscriptionEndOf(claims.tid))) {
+  const gate = await tenantGateOf(claims.tid);
+  if (isExpired(gate.subscriptionEnd)) {
     throw new DomainError("SUBSCRIPTION_EXPIRED", "subscription expired");
   }
 
@@ -32,6 +33,7 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
       userId: asUserId(claims.sub),
       role: m.role as typeof claims.role,
       ...(m.outletId ? { outletId: m.outletId } : {}),
+      localBilling: gate.localBilling,
     },
     () => next(),
   );

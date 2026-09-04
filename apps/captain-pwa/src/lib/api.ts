@@ -117,6 +117,7 @@ export interface Outlet {
   paperWidth?: number;
   printerIp?: string | null;
   printerPort?: number;
+  upiId?: string | null;
   isActive: boolean;
   menuMode: "shared" | "own";
 }
@@ -288,6 +289,8 @@ export const api = {
       tenantId: string;
       role: string;
       subscriptionEndsAt: string | null;
+      localBilling?: boolean;
+      taxCountry?: string;
     }>("/api/v1/me"),
 
   branding: () => get<{ branding: Branding | null }>("/api/v1/branding").then((r) => r.branding),
@@ -306,6 +309,7 @@ export const api = {
       gstin?: string | null;
       address?: { line1: string; line2?: string; city: string; state: string; pincode: string; country: string };
       invoicePrefix?: string;
+      upiId?: string | null;
     },
   ) => send<{ outlet: Outlet }>("PATCH", `/api/v1/outlets/${id}`, patch).then((r) => r.outlet),
   qrToken: (outletId: string) =>
@@ -399,8 +403,9 @@ export const api = {
 
   fireKot: (id: string) =>
     send<{ order: Order }>("POST", `/api/v1/ordering/orders/${id}/fire-kot`).then((r) => r.order),
-  settleOrder: (id: string) =>
-    send<{ order: Order }>("POST", `/api/v1/ordering/orders/${id}/settle`).then((r) => r.order),
+  /** `localBill` tells the cloud this device keeps the invoice — no auto-bill. */
+  settleOrder: (id: string, localBill = false) =>
+    send<{ order: Order }>("POST", `/api/v1/ordering/orders/${id}/settle`, localBill ? { localBill } : undefined).then((r) => r.order),
   voidOrder: (id: string) =>
     send<{ order: Order }>("POST", `/api/v1/ordering/orders/${id}/void`).then((r) => r.order),
 
@@ -423,6 +428,18 @@ export const api = {
         ].filter(Boolean).join("&"),
     ).then((r) => r.bills),
   bill: (id: string) => get<{ bill: Bill }>(`/api/v1/billing/bills/${id}`).then((r) => r.bill),
+  /** Push a device-kept bill to the cloud; the API re-prices the order and keeps our number. */
+  importBill: (b: Bill) =>
+    send<{ bill: Bill }>("POST", "/api/v1/billing/bills/import", {
+      id: b.id,
+      orderId: b.orderId,
+      invoiceNumber: b.invoiceNumber,
+      fiscalYear: b.fiscalYear,
+      settledAt: b.settledAt,
+      grandTotalMinor: b.grandTotalMinor,
+      ...(b.customerName ? { customerName: b.customerName } : {}),
+      ...(b.customerPhone ? { customerPhone: b.customerPhone } : {}),
+    }).then((r) => r.bill),
 
   printKot: (id: string) => send<null>("POST", `/api/v1/print/kots/${id}`),
   printBill: (id: string) => send<null>("POST", `/api/v1/print/bills/${id}`),

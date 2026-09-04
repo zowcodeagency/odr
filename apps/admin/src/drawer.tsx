@@ -100,6 +100,17 @@ export function Drawer({
   const [outletOk, setOutletOk] = useState("");
   const [importTarget, setImportTarget] = useState<string>(""); // "" = shared brand menu
 
+  const [localBilling, setLocalBilling] = useState(restaurant.localBilling ?? false);
+  const [featureError, setFeatureError] = useState("");
+  const toggleLocalBilling = (on: boolean) => {
+    setFeatureError("");
+    setLocalBilling(on);
+    api
+      .setLocalBilling(adminKey, id, on)
+      .then(onChanged)
+      .catch((e: unknown) => { setLocalBilling(!on); fail(e, setFeatureError); });
+  };
+
   const fail = (err: unknown, set: (m: string) => void) => {
     if (err instanceof ApiError && err.unauthorized) return onUnauthorized();
     set(err instanceof Error ? err.message : "Something went wrong.");
@@ -238,6 +249,21 @@ export function Drawer({
         </header>
 
         <div className="space-y-8 px-6 py-6">
+          <section>
+            <h3 className="text-sm font-semibold">Special features</h3>
+            <label className="mt-3 flex items-start gap-3 rounded-lg border bg-surface p-4 text-sm">
+              <input type="checkbox" className="mt-1" checked={localBilling} onChange={(e) => toggleLocalBilling(e.target.checked)} />
+              <span>
+                <span className="font-medium">Bills on the device</span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  Staff can hold "Settle &amp; bill" for five seconds to keep that invoice on their phone instead of the cloud.
+                  Settings shows the space used, with Sync and Clear. Off by default.
+                </span>
+              </span>
+            </label>
+            {featureError ? <div className="mt-3"><Note kind="error">{featureError}</Note></div> : null}
+          </section>
+
           <section>
             <div className="flex items-start justify-between gap-3">
               <div>

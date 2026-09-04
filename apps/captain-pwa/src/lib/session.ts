@@ -24,6 +24,13 @@ export interface Session {
   printerPort?: number;
   /** ISO date, or null when the tenant has no enforced window. */
   subscriptionEndsAt: string | null;
+  /** Admin-granted: hold "Settle & bill" to keep the invoice on this device. */
+  localBilling?: boolean;
+  /** Country the cloud taxes with — device-side bills must use the same. */
+  taxCountry?: string;
+  invoicePrefix?: string;
+  /** UPI ID printed on the bill as a pay QR; null = none. */
+  outletUpiId?: string | null;
 }
 
 const KEY = "odr.session";
@@ -88,6 +95,8 @@ export const outletPatch = (o: {
   printerIp?: string | null;
   printerPort?: number;
   menuMode?: "shared" | "own";
+  invoicePrefix?: string;
+  upiId?: string | null;
 }): Partial<Session> => ({
   outletId: o.id,
   outletName: o.name,
@@ -97,6 +106,8 @@ export const outletPatch = (o: {
   printerIp: o.printerIp ?? null,
   printerPort: o.printerPort ?? 9100,
   menuMode: o.menuMode ?? "shared",
+  invoicePrefix: o.invoicePrefix ?? "INV",
+  outletUpiId: o.upiId ?? null,
 });
 
 export const canManage = (role: string): boolean =>

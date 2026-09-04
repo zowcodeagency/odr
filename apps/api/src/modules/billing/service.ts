@@ -35,42 +35,25 @@ export type BillingServiceDeps = {
   isInterstate?: (tenantId: string, outletId: string) => Promise<boolean>;
 };
 
-export const makeBillingService = ({ repo, events, country, orders, isInterstate }: BillingServiceDeps) => ({
-  async settleOrderToBill(input: { orderId: string; customerName?: string; customerPhone?: string }): Promise<Bill> {
-    const ctx = getContext();
-    if (!can(ctx.role, "billing:settle")) throw new ForbiddenError("cannot settle bills");
 
-    const existing = await repo.byOrderId(ctx.tenantId, input.orderId);
-    if (existing) {
-      assertOutletScope(existing.outletId);
-      // Idempotent — settle is at-least-once, and the order.settled event
-      // already materialised this bill without customer details. Fill them in
-      // now rather than dropping what the cashier just typed.
-      const wants = input.customerName ?? input.customerPhone;
-      if (wants && !existing.customerName && !existing.customerPhone) {
-        return (
-          (await repo.setCustomer(ctx.tenantId, existing.id, {
-            customerName: input.customerName ?? null,
-            customerPhone: input.customerPhone ?? null,
-          })) ?? existing
-        );
-      }
-      return existing;
-    }
+type PriceInput = { orderId: string; customerName?: string; customerPhone?: string };
 
-    const order = await orders.byIdForBilling(ctx.tenantId, input.orderId);
+export const makeBillingService = ({ repo, events, country, orders, isInterstate }: BillingServiceDeps) => {
+  /** Load the settled order and work out lines, tax rows and totals — the one place money is computed. */
+  const price = async (tenantId: string, input: PriceInput): Promise<BillInsert & { prefix: string }> => {
+    const order = await orders.byIdForBilling(tenantId, input.orderId);
     if (!order) throw new NotFoundError("order", input.orderId);
     assertOutletScope(order.outletId);
     if (order.state !== "settled") {
       throw new ConflictError("order must be in 'settled' state to be billed", { orderId: order.id, state: order.state });
     }
 
-    const meta = await repo.outletPrefixAndCurrency(ctx.tenantId, order.outletId);
+    const meta = await repo.outletPrefixAndCurrency(tenantId, order.outletId);
     if (!meta) throw new NotFoundError("outlet", order.outletId);
     const currency = meta.currency as Currency;
 
     const tax = getTaxStrategy(country());
-    const interstate = isInterstate ? await isInterstate(ctx.tenantId, order.outletId) : false;
+    const interstate = isInterstate ? await isInterstate(tenantId, order.outletId) : false;
     const fiscalYear = fiscalYearFor(new Date(), tax.country);
 
     let subtotalMinor = 0n;
@@ -111,9 +94,9 @@ export const makeBillingService = ({ repo, events, country, orders, isInterstate
       });
     }
 
-    const insert: BillInsert = {
+    return {
       id: newId(),
-      tenantId: ctx.tenantId,
+      tenantId,
       outletId: order.outletId,
       orderId: order.id,
       invoiceNumber: "", // assigned inside reserveAndCreate
@@ -128,9 +111,35 @@ export const makeBillingService = ({ repo, events, country, orders, isInterstate
       lines: billLines,
       customerName: input.customerName ?? null,
       customerPhone: input.customerPhone ?? null,
+      prefix: meta.prefix,
     };
+  };
 
-    const bill = await repo.reserveAndCreate(insert, meta.prefix);
+  return {
+  async settleOrderToBill(input: { orderId: string; customerName?: string; customerPhone?: string }): Promise<Bill> {
+    const ctx = getContext();
+    if (!can(ctx.role, "billing:settle")) throw new ForbiddenError("cannot settle bills");
+
+    const existing = await repo.byOrderId(ctx.tenantId, input.orderId);
+    if (existing) {
+      assertOutletScope(existing.outletId);
+      // Idempotent — settle is at-least-once, and the order.settled event
+      // already materialised this bill without customer details. Fill them in
+      // now rather than dropping what the cashier just typed.
+      const wants = input.customerName ?? input.customerPhone;
+      if (wants && !existing.customerName && !existing.customerPhone) {
+        return (
+          (await repo.setCustomer(ctx.tenantId, existing.id, {
+            customerName: input.customerName ?? null,
+            customerPhone: input.customerPhone ?? null,
+          })) ?? existing
+        );
+      }
+      return existing;
+    }
+
+    const insert = await price(ctx.tenantId, input);
+    const bill = await repo.reserveAndCreate(insert, insert.prefix);
 
     await events.publish({
       name: "bill.created",
@@ -139,6 +148,51 @@ export const makeBillingService = ({ repo, events, country, orders, isInterstate
       payload: { billId: bill.id, orderId: bill.orderId, invoiceNumber: bill.invoiceNumber, grandTotalMinor: bill.grandTotalMinor.toString() },
     });
 
+    return bill;
+  },
+
+  /**
+   * A bill the device already printed (hold-to-settle). The cloud re-prices the
+   * same order and refuses if the totals disagree — the paper in the customer's
+   * hand must equal the record. Idempotent per order, like settle.
+   */
+  async importLocalBill(input: {
+    id: string;
+    orderId: string;
+    invoiceNumber: string;
+    fiscalYear: string;
+    settledAt: string;
+    grandTotalMinor: bigint;
+    customerName?: string;
+    customerPhone?: string;
+  }): Promise<Bill> {
+    const ctx = getContext();
+    if (!can(ctx.role, "billing:settle")) throw new ForbiddenError("cannot settle bills");
+    if (!ctx.localBilling) throw new ForbiddenError("local billing is not enabled");
+
+    const existing = await repo.byOrderId(ctx.tenantId, input.orderId);
+    if (existing) {
+      assertOutletScope(existing.outletId);
+      return existing;
+    }
+
+    const priced = await price(ctx.tenantId, input);
+    if (priced.grandTotalMinor !== input.grandTotalMinor) {
+      throw new ConflictError("device bill total differs from the cloud price", {
+        device: input.grandTotalMinor.toString(),
+        cloud: priced.grandTotalMinor.toString(),
+      });
+    }
+    const bill = await repo.reserveAndCreate(
+      { ...priced, id: input.id, invoiceNumber: input.invoiceNumber, fiscalYear: input.fiscalYear, settledAt: input.settledAt },
+      priced.prefix,
+    );
+    await events.publish({
+      name: "bill.created",
+      tenantId: ctx.tenantId,
+      occurredAt: new Date().toISOString(),
+      payload: { billId: bill.id, orderId: bill.orderId, invoiceNumber: bill.invoiceNumber, grandTotalMinor: bill.grandTotalMinor.toString() },
+    });
     return bill;
   },
 
@@ -159,6 +213,7 @@ export const makeBillingService = ({ repo, events, country, orders, isInterstate
     // ponytail: capped list, no cursor. Add paging when a shift exceeds 500 bills.
     return repo.list(ctx.tenantId, { ...opts, limit: Math.min(opts.limit ?? 200, 500) });
   },
-});
+  };
+};
 
 export type BillingService = ReturnType<typeof makeBillingService>;

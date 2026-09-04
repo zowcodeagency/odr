@@ -9,6 +9,7 @@ const tenantCols = {
   slug: tenants.slug,
   subscriptionStart: tenants.subscriptionStart,
   subscriptionEnd: tenants.subscriptionEnd,
+  localBilling: tenants.localBilling,
   createdAt: tenants.createdAt,
   outletCount: sql<number>`(select count(*)::int from ${outlets} o where o.tenant_id = ${tenants.id})`,
 };
@@ -19,6 +20,7 @@ const toTenant = (r: {
   slug: string;
   subscriptionStart: string | null;
   subscriptionEnd: string | null;
+  localBilling: boolean;
   createdAt: Date;
   outletCount: number;
 }): TenantRow => ({ ...r, createdAt: r.createdAt.toISOString() });
@@ -57,6 +59,10 @@ export const drizzleAdminRepo = (db: DB): AdminRepo => ({
     await db.update(tenants).set({ subscriptionEnd: end }).where(eq(tenants.id, tenantId));
   },
 
+  async setLocalBilling(tenantId, on) {
+    const rows = await db.update(tenants).set({ localBilling: on }).where(eq(tenants.id, tenantId)).returning({ id: tenants.id });
+    return rows.length > 0;
+  },
   async listOutlets(tenantId) {
     const rows = await db.select().from(outlets).where(eq(outlets.tenantId, tenantId)).orderBy(outlets.createdAt);
     return rows.map((o) => ({

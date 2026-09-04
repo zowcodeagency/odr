@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Flame,
+  HardDrive,
   Loader2,
   Plus,
   Printer,
@@ -36,6 +37,12 @@ import { useCart } from "../features/ordering/use-cart.ts";
 import { CHANNEL_LABEL, CHANNEL_TONE } from "../features/ordering/channels.ts";
 import { ThermalTicket } from "../features/print/thermal-ticket.tsx";
 import { canManage, type Session } from "../lib/session.ts";
+import { HoldButton } from "../features/billing/hold-button.tsx";
+import { buildLocalBill, fiscalYearFor } from "../features/billing/local-bill.ts";
+import { localBills } from "../lib/local-db.ts";
+
+/** How long "Settle & bill" is held before the bill stays on this device. */
+const HOLD_MS = 5000;
 
 export const OrderRoute = ({
   orderId,
@@ -49,6 +56,8 @@ export const OrderRoute = ({
   const [cartOpen, setCartOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [askCustomer, setAskCustomer] = useState(false);
+  // Set by holding "Settle & bill": the invoice is written to this device, not the cloud.
+  const [keepLocal, setKeepLocal] = useState(false);
   const busyRef = useRef(false);
   const cart = useCart(`odr.cart.${orderId}`);
 
@@ -156,14 +165,33 @@ export const OrderRoute = ({
       // already settled, and retrying must reach the bill rather than dying
       // on the FSM. Billing itself is idempotent per order.
       if (order?.state !== "settled") {
-        await api.settleOrder(orderId).catch((e: unknown) => {
+        await api.settleOrder(orderId, keepLocal).catch((e: unknown) => {
           if (errorCode(e) !== "CONFLICT") throw e;
         });
       }
-      const bill = await api.createBill(orderId, customer);
+      const billId = keepLocal ? await settleLocally(customer) : (await api.createBill(orderId, customer)).id;
       setAskCustomer(false);
-      navigate({ name: "bill", billId: bill.id });
+      setKeepLocal(false);
+      navigate({ name: "bill", billId });
     });
+
+  // Priced and numbered on the device, saved to IndexedDB. Settings syncs it later.
+  const settleLocally = async (customer?: { customerName?: string; customerPhone?: string }) => {
+    const settled = order?.state === "settled" ? order : await api.order(orderId);
+    const country = session.taxCountry ?? "IN";
+    const fiscalYear = fiscalYearFor(new Date(), country);
+    const bill = buildLocalBill({
+      id: crypto.randomUUID(),
+      order: settled,
+      invoiceNumber: await localBills.nextInvoiceNumber(session.invoicePrefix ?? "INV", fiscalYear),
+      fiscalYear,
+      country,
+      settledAt: new Date().toISOString(),
+      ...customer,
+    });
+    await localBills.put(bill);
+    return bill.id;
+  };
 
   if (orderQ.loading && !order) return <Centered>Loading the order…</Centered>;
   if (!order)
@@ -273,14 +301,27 @@ export const OrderRoute = ({
           {state === "kot_fired" && cart.items.length === 0 ? "KOT fired" : "Fire KOT"}
         </Button>
         <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Button
-            size="lg"
-            variant={canSettle ? "primary" : "outline"}
-            onClick={() => setAskCustomer(true)}
-            disabled={busy || !canSettle}
-          >
-            <ReceiptText size={16} /> {state === "settled" ? "Get bill" : "Settle & bill"}
-          </Button>
+          {session.localBilling ? (
+            <HoldButton
+              size="lg"
+              holdMs={HOLD_MS}
+              variant={canSettle ? "primary" : "outline"}
+              onClick={() => { setKeepLocal(false); setAskCustomer(true); }}
+              onHold={() => { setKeepLocal(true); setAskCustomer(true); }}
+              disabled={busy || !canSettle}
+            >
+              <ReceiptText size={16} /> {state === "settled" ? "Get bill" : "Settle & bill"}
+            </HoldButton>
+          ) : (
+            <Button
+              size="lg"
+              variant={canSettle ? "primary" : "outline"}
+              onClick={() => setAskCustomer(true)}
+              disabled={busy || !canSettle}
+            >
+              <ReceiptText size={16} /> {state === "settled" ? "Get bill" : "Settle & bill"}
+            </Button>
+          )}
           <Button
             size="lg"
             variant="outline"
@@ -478,7 +519,8 @@ export const OrderRoute = ({
       <CustomerDialog
         open={askCustomer}
         busy={busy}
-        onOpenChange={setAskCustomer}
+        local={keepLocal}
+        onOpenChange={(v) => { setAskCustomer(v); if (!v) setKeepLocal(false); }}
         onSettle={settle}
       />
 
@@ -510,11 +552,14 @@ export const OrderRoute = ({
 const CustomerDialog = ({
   open,
   busy,
+  local,
   onOpenChange,
   onSettle,
 }: {
   open: boolean;
   busy: boolean;
+  /** The bill will stay on this device. */
+  local: boolean;
   onOpenChange: (v: boolean) => void;
   onSettle: (c?: { customerName?: string; customerPhone?: string }) => void;
 }) => {
@@ -526,6 +571,11 @@ const CustomerDialog = ({
       <DialogContent>
         <DialogTitle>Customer details</DialogTitle>
         <DialogDescription>Optional. Skip if they are in a hurry.</DialogDescription>
+        {local ? (
+          <p className="mt-3 flex items-center gap-2 px-3 py-2 rounded-[var(--radius-2)] bg-[var(--accent-soft)] text-[13px] text-[var(--accent)]">
+            <HardDrive size={15} /> This bill stays on this device — not in the cloud
+          </p>
+        ) : null}
 
         <form
           className="mt-5 grid gap-3"
