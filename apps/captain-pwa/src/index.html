@@ -18,6 +18,24 @@
               ? "dark"
               : "light";
       } catch (e) {}
+      // Replay the owner's branding (snapshotted by lib/branding.ts) on the
+      // same frame, so a branded device never flashes stock Odr colours.
+      try {
+        var p = JSON.parse(localStorage.getItem("odr.brandingPaint") || "null");
+        if (p) {
+          var r = document.documentElement;
+          r.style.cssText = p.css;
+          if (p.theme) r.dataset.theme = p.theme;
+          if (p.style) r.dataset.style = p.style;
+          if (p.font) {
+            var l = document.createElement("link");
+            l.id = "odr-brand-font";
+            l.rel = "stylesheet";
+            l.href = p.font;
+            document.head.appendChild(l);
+          }
+        }
+      } catch (e) {}
     </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />

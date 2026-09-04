@@ -122,15 +122,33 @@ const VARS = [
   "--font-body",
 ] as const;
 
-const loadFont = (family: string): void => {
+const loadFont = (family: string): string | null => {
   const id = "odr-brand-font";
   document.getElementById(id)?.remove();
-  if (family === FONTS[0]) return; // stock font is already in index.html
+  if (family === FONTS[0]) return null; // stock font is already in index.html
   const link = document.createElement("link");
   link.id = id;
   link.rel = "stylesheet";
   link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, "+")}:wght@400;500;600&display=swap`;
   document.head.appendChild(link);
+  return link.href;
+};
+
+/**
+ * The finished paint — resolved CSS vars, theme, style, font URL — so the
+ * inline script in index.html can replay it before first frame. This module
+ * runs after that frame, so applying the stored Branding here is too late to
+ * stop the stock-colour flash.
+ */
+export const PAINT_KEY = "odr.brandingPaint";
+const snapshotPaint = (fontHref: string | null): void => {
+  const root = document.documentElement;
+  try {
+    localStorage.setItem(
+      PAINT_KEY,
+      JSON.stringify({ css: root.style.cssText, theme: root.dataset["theme"] ?? "", style: root.dataset["style"] ?? "", font: fontHref ?? "" }),
+    );
+  } catch { /* private mode */ }
 };
 
 /** null = back to stock Odr. */
@@ -142,6 +160,7 @@ export const applyBranding = (b: Branding | null): void => {
     delete root.dataset["theme"];
     delete root.dataset["style"];
     loadFont(FONTS[0]!);
+    try { localStorage.removeItem(PAINT_KEY); } catch { /* private mode */ }
     return;
   }
 
@@ -165,7 +184,7 @@ export const applyBranding = (b: Branding | null): void => {
   if (b.font && b.font !== FONTS[0]) {
     root.style.setProperty("--font-body", `"${b.font}", ui-sans-serif, system-ui, sans-serif`);
   }
-  loadFont(b.font);
+  const fontHref = loadFont(b.font);
 
   if (b.theme === "auto") delete root.dataset["theme"];
   else root.dataset["theme"] = b.theme;
@@ -173,6 +192,8 @@ export const applyBranding = (b: Branding | null): void => {
   // Style variants live in index.css keyed off this attribute.
   if (b.style && b.style !== "classic") root.dataset["style"] = b.style;
   else delete root.dataset["style"];
+
+  snapshotPaint(fontHref);
 };
 
 /** File → small data-URL (fits the API's 200KB cap): downscale to ≤128px tall PNG. */
