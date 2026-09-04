@@ -14,20 +14,19 @@ export const DialogContent = forwardRef<
   <RadixDialog.Portal>
     <RadixDialog.Overlay
       className={cn(
-        "fixed inset-0 z-40 bg-[var(--bg-overlay)] backdrop-blur-sm",
-        "data-[state=open]:animate-in data-[state=open]:fade-in-0",
-        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
+        "fixed inset-0 z-40 bg-[var(--bg-overlay)] backdrop-blur-[2px]",
+        "data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
       )}
     />
     <RadixDialog.Content
       ref={ref}
       className={cn(
         "fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-        "w-[min(560px,calc(100vw-32px))] max-h-[85vh] overflow-auto",
+        "w-[min(560px,calc(100vw-32px))] max-h-[85dvh] overflow-auto",
         "bg-[var(--bg-surface)] text-[var(--fg-primary)]",
         "ring-1 ring-[var(--line-default)] rounded-[var(--radius-4)]",
         "shadow-[var(--shadow-3)] p-6",
-        "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+        "data-[state=open]:animate-pop-in data-[state=closed]:animate-pop-out",
         className,
       )}
       {...props}

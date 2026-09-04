@@ -33,12 +33,7 @@ export const Topbar = ({ session }: TopbarProps) => {
         <BrandMark />
       </span>
 
-      <div className="min-w-0">
-        <OutletSwitcher session={session} />
-        <span className="block text-[12px] text-[var(--fg-tertiary)] truncate">
-          {session.email} · {session.role}
-        </span>
-      </div>
+      <OutletSwitcher session={session} />
 
       <div className="flex-1" />
 

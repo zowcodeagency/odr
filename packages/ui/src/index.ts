@@ -24,6 +24,7 @@ export {
   SheetClose,
   SheetContent,
   SheetTitle,
+  SheetDescription,
 } from "./primitives/sheet.tsx";
 
 // components

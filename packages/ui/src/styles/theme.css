@@ -7,6 +7,19 @@
  */
 
 @theme inline {
+  /* Overlay + sheet + dialog motion. Used as animate-fade-in etc. */
+  --animate-fade-in:   fade-in var(--dur-base) var(--ease-out) both;
+  --animate-fade-out:  fade-out var(--dur-quick) ease-in both;
+  --animate-sheet-in:  sheet-in var(--dur-slow) cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-sheet-out: sheet-out var(--dur-base) ease-in both;
+  --animate-pop-in:    pop-in var(--dur-base) var(--ease-out) both;
+  --animate-pop-out:   pop-out var(--dur-quick) ease-in both;
+  @keyframes fade-in   { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes fade-out  { from { opacity: 1 } to { opacity: 0 } }
+  @keyframes sheet-in  { from { transform: translateY(100%) } to { transform: translateY(0) } }
+  @keyframes sheet-out { from { transform: translateY(0) } to { transform: translateY(100%) } }
+  @keyframes pop-in    { from { opacity: 0; transform: translate(-50%, -50%) scale(0.96) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }
+  @keyframes pop-out   { from { opacity: 1; transform: translate(-50%, -50%) scale(1) } to { opacity: 0; transform: translate(-50%, -50%) scale(0.98) } }
   --color-canvas:        var(--bg-canvas);
   --color-surface:       var(--bg-surface);
   --color-surface-2:     var(--bg-surface-2);
