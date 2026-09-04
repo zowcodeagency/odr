@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ImagePlus, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ImagePlus, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   Button,
+  ConfirmDialog,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -75,6 +76,9 @@ const readImage = (file: File): Promise<ItemImage> =>
 /** Photo URL for a saved dish; `v` busts the browser cache after edits. */
 const imageUrl = (id: string, v: number) => `/public/menu-images/${id}?v=${v}`;
 
+/** Off the board here: 86'd at this outlet or retired from the brand menu. */
+const isOff = (i: MenuItem) => i.soldOutHere === true || i.isActive === false;
+
 /**
  * The menu board. One horizontal lane per category so it reads like the board
  * on the wall, not a spreadsheet. Sold-out dishes stay on the board, muted —
@@ -94,8 +98,9 @@ export const MenuRoute = ({ session }: { session: Session }) => {
     return { categories, items };
   }, [outletId]);
 
-  // New value per data refresh — mutations reload, so edited photos re-fetch.
-  const imgVer = useMemo(() => Date.now(), [q.data]);
+  // Bumped only after a save or delete here — those are the mutations that can
+  // change a photo. Polls and remounts keep the browser cache warm.
+  const [imgVer, setImgVer] = useState(() => Date.now());
 
   const lanes = useMemo(() => {
     const items = q.data?.items ?? [];
@@ -116,11 +121,12 @@ export const MenuRoute = ({ session }: { session: Session }) => {
     );
   }
 
-  const run = async (fn: () => Promise<unknown>, ok?: string) => {
+  const run = async (fn: () => Promise<unknown>, ok?: string, touchesPhoto = false) => {
     setBusy(true);
     try {
       await fn();
       q.reload();
+      if (touchesPhoto) setImgVer(Date.now());
       if (ok) toast(ok);
     } catch (e) {
       toast(e instanceof Error ? e.message : "That didn't work");
@@ -155,7 +161,7 @@ export const MenuRoute = ({ session }: { session: Session }) => {
           description: payload.description ?? "",
         });
       setDraft(null);
-    }, d.id ? "Saved" : "Dish added");
+    }, d.id ? "Saved" : "Dish added", true);
 
   return (
     <div className="px-4 py-5 sm:px-6 sm:py-7 lg:px-10 max-w-[1440px] mx-auto">
@@ -260,7 +266,7 @@ export const MenuRoute = ({ session }: { session: Session }) => {
           run(async () => {
             await api.deleteMenuItem(id);
             setDraft(null);
-          }, `${name} deleted`)
+          }, `${name} deleted`, true)
         }
       />
     </div>
@@ -327,11 +333,13 @@ const MenuSection = ({
   onDelete: () => void;
 }) => {
   const [open, setOpen] = useState(true);
-  const soldOut = items.filter((i) => i.isActive === false).length;
+  // null = showing the name; a string = the rename draft.
+  const [editing, setEditing] = useState<string | null>(null);
+  const soldOut = items.filter(isOff).length;
 
   return (
     <section>
-      <header className="flex items-center gap-1.5 mb-2.5">
+      <header className="group flex items-center gap-1.5 mb-2.5">
         <button
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
@@ -343,25 +351,50 @@ const MenuSection = ({
             className={cn("transition-transform duration-[var(--dur-quick)]", !open && "-rotate-90")}
           />
         </button>
-        <h2
+        {editing !== null ? (
+          <Input
+            autoFocus
+            aria-label="Section name"
+            value={editing}
+            onChange={(e) => setEditing(e.target.value)}
+            onBlur={() => setEditing(null)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setEditing(null);
+              if (e.key === "Enter") {
+                const next = editing.trim();
+                if (next && next !== category.name) onRename(next);
+                setEditing(null);
+              }
+            }}
+            className="h-11 w-[220px] text-[16px] font-semibold"
+          />
+        ) : (
           // Rename in place — no dialog for a one-word change.
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => {
-            const next = e.currentTarget.textContent?.trim() ?? "";
-            if (next && next !== category.name) onRename(next);
-            else e.currentTarget.textContent = category.name;
-          }}
-          className="text-[16px] font-semibold tracking-[-0.01em] px-1 -mx-1 rounded
-                     focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-        >
-          {category.name}
-        </h2>
+          <button
+            type="button"
+            onClick={() => setEditing(category.name)}
+            aria-label={`Rename ${category.name}`}
+            className="inline-flex items-center gap-1.5 min-h-11 px-1 -mx-1 rounded text-left
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            <h2 className="text-[16px] font-semibold tracking-[-0.01em]">{category.name}</h2>
+            <Pencil
+              size={14}
+              className="text-[var(--fg-muted)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100
+                         [@media(pointer:coarse)]:opacity-100 transition-opacity duration-[var(--dur-quick)]"
+            />
+          </button>
+        )}
         <span className="text-[12px] text-[var(--fg-muted)] font-mono">
           {items.length}
           {soldOut > 0 ? ` · ${soldOut} off` : ""}
         </span>
         <div className="flex-1" />
+        {items.length > 0 ? (
+          <span className="hidden sm:group-hover:inline text-[12px] text-[var(--fg-muted)]">
+            Move or delete its dishes to remove this section
+          </span>
+        ) : null}
         {items.length === 0 ? (
           <button
             onClick={onDelete}
@@ -411,7 +444,7 @@ const DishRow = ({
   onEdit: () => void;
   onToggle: () => void;
 }) => {
-  const off = item.soldOutHere === true || item.isActive === false;
+  const off = isOff(item);
   return (
     <div className="flex items-center gap-2 pr-2">
       <button
@@ -482,9 +515,11 @@ const DishDialog = ({
   // Re-seed whenever open/close hands us a new draft object. Compared by
   // reference, not id — a fresh "new dish" draft has no id to compare.
   const [seeded, setSeeded] = useState(draft);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   if (draft !== seeded) {
     setSeeded(draft);
     setD(draft);
+    setConfirmDelete(false);
   }
   if (!d) return null;
 
@@ -515,19 +550,22 @@ const DishDialog = ({
           {!d.id ? (
             <label className="block sm:col-span-2">
               <span className="block text-[13px] font-medium text-[var(--fg-secondary)] mb-1.5">Section</span>
-              <select
-                value={d.categoryId}
-                onChange={(e) => setD({ ...d, categoryId: e.target.value })}
-                className="h-11 w-full px-3 text-[14px] rounded-[var(--radius-2)]
-                           bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
-                           focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <span className="relative block">
+                <select
+                  value={d.categoryId}
+                  onChange={(e) => setD({ ...d, categoryId: e.target.value })}
+                  className="appearance-none h-11 w-full pl-3 pr-9 text-[14px] rounded-[var(--radius-2)]
+                             bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
+                             focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fg-muted)]" />
+              </span>
             </label>
           ) : null}
 
@@ -559,19 +597,22 @@ const DishDialog = ({
 
           <label className="block">
             <span className="block text-[13px] font-medium text-[var(--fg-secondary)] mb-1.5">GST</span>
-            <select
-              value={d.taxClass}
-              onChange={(e) => setD({ ...d, taxClass: e.target.value })}
-              className="h-11 w-full px-3 text-[14px] rounded-[var(--radius-2)]
-                         bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
-                         focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-            >
-              {TAX_CLASSES.map((t) => (
-                <option key={t} value={t}>
-                  {taxLabel(t)}
-                </option>
-              ))}
-            </select>
+            <span className="relative block">
+              <select
+                value={d.taxClass}
+                onChange={(e) => setD({ ...d, taxClass: e.target.value })}
+                className="appearance-none h-11 w-full pl-3 pr-9 text-[14px] rounded-[var(--radius-2)]
+                           bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
+                           focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              >
+                {TAX_CLASSES.map((t) => (
+                  <option key={t} value={t}>
+                    {taxLabel(t)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fg-muted)]" />
+            </span>
           </label>
 
           <label className="block sm:col-span-2">
@@ -662,10 +703,7 @@ const DishDialog = ({
             <button
               type="button"
               disabled={busy}
-              onClick={() => {
-                if (window.confirm(`Delete ${d.name}? Past bills are not affected.`))
-                  onDelete(d.id!, d.name);
-              }}
+              onClick={() => setConfirmDelete(true)}
               className="sm:col-span-2 min-h-11 text-[13px] text-[var(--fg-muted)] hover:text-[var(--status-voided)]"
             >
               Delete this dish
@@ -673,6 +711,15 @@ const DishDialog = ({
           ) : null}
         </form>
       </DialogContent>
+      <ConfirmDialog
+        open={confirmDelete}
+        title={`Delete ${d.name}?`}
+        description="Past bills are not affected."
+        confirmLabel="Delete"
+        busy={busy}
+        onConfirm={() => d.id && onDelete(d.id, d.name)}
+        onOpenChange={setConfirmDelete}
+      />
     </Dialog>
   );
 };

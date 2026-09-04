@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Flame,
@@ -15,6 +15,7 @@ import {
   Badge,
   Button,
   CartLine,
+  ConfirmDialog,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -56,6 +57,7 @@ export const OrderRoute = ({
   const [cartOpen, setCartOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [askCustomer, setAskCustomer] = useState(false);
+  const [askVoid, setAskVoid] = useState(false);
   // Set by holding "Settle & bill": the invoice is written to this device, not the cloud.
   const [keepLocal, setKeepLocal] = useState(false);
   const busyRef = useRef(false);
@@ -339,10 +341,7 @@ export const OrderRoute = ({
             variant="outline"
             className="text-[var(--status-voided)]"
             disabled={busy}
-            onClick={() => {
-              if (window.confirm(`Void this order${who ? ` (${who})` : ""}? This cannot be undone.`))
-                voidOrder();
-            }}
+            onClick={() => setAskVoid(true)}
           >
             Void order
           </Button>
@@ -408,7 +407,7 @@ export const OrderRoute = ({
 
         {/* Categories */}
         {query ? null : (
-          <div className="px-4 sm:px-6 py-2.5 flex gap-1.5 overflow-x-auto border-b border-[var(--line-subtle)]">
+          <div className="px-4 sm:px-6 py-2.5 flex gap-1.5 overflow-x-auto [scrollbar-width:none] border-b border-[var(--line-subtle)]">
             {categories.map((c) => (
               <button
                 key={c.id}
@@ -426,7 +425,7 @@ export const OrderRoute = ({
         )}
 
         {/* Items */}
-        <div className="flex-1 min-h-0 overflow-auto px-4 sm:px-6 py-4 pb-28 lg:pb-8">
+        <div className="flex-1 min-h-0 overflow-auto px-4 sm:px-6 py-4 pb-4 lg:pb-8">
           {/* A closed order takes no more items — the FSM would reject them. */}
           {state === "settled" || state === "voided" ? (
             <p className="text-[14px] text-[var(--fg-tertiary)]">
@@ -465,6 +464,35 @@ export const OrderRoute = ({
             </div>
           )}
         </div>
+
+        {/* Mobile: thumb-reachable bar + sheet. In flow, so it sits above the
+            bottom tab bar on phones and beside the rail on tablets. */}
+        <div
+          className="lg:hidden shrink-0 px-4 pt-3 pb-3
+                     bg-[var(--bg-surface)] border-t border-[var(--line-default)]
+                     flex items-center gap-3"
+        >
+          <button
+            onClick={() => setCartOpen(true)}
+            className="flex-1 min-h-12 px-4 flex items-center gap-2 rounded-[var(--radius-2)]
+                       ring-1 ring-[var(--line-default)] text-left"
+          >
+            <ShoppingBag size={16} className="text-[var(--fg-tertiary)]" />
+            <span className="flex-1">
+              <span className="block text-[12px] text-[var(--fg-tertiary)]">
+                {cart.totalQty} pending · {order.lines.length} sent
+              </span>
+              <Money
+                minor={sentTotal + pendingTotal}
+                mono
+                className="text-[15px] font-semibold"
+              />
+            </span>
+          </button>
+          <Button size="lg" className="min-h-12" onClick={fireKot} disabled={busy || !canFire}>
+            <Flame size={16} /> Fire
+          </Button>
+        </div>
       </section>
 
       {/* Cart — side panel from lg, bottom sheet below it */}
@@ -477,35 +505,6 @@ export const OrderRoute = ({
         </div>
         {cartPanel}
       </aside>
-
-      {/* Mobile: thumb-reachable bar + sheet */}
-      <div
-        className="lg:hidden fixed left-0 right-0 bottom-0 z-30 px-4 pt-3
-                   pb-[max(12px,env(safe-area-inset-bottom))]
-                   bg-[var(--bg-surface)] border-t border-[var(--line-default)]
-                   flex items-center gap-3"
-      >
-        <button
-          onClick={() => setCartOpen(true)}
-          className="flex-1 min-h-12 px-4 flex items-center gap-2 rounded-[var(--radius-2)]
-                     ring-1 ring-[var(--line-default)] text-left"
-        >
-          <ShoppingBag size={16} className="text-[var(--fg-tertiary)]" />
-          <span className="flex-1">
-            <span className="block text-[12px] text-[var(--fg-tertiary)]">
-              {cart.totalQty} pending · {order.lines.length} sent
-            </span>
-            <Money
-              minor={sentTotal + pendingTotal}
-              mono
-              className="text-[15px] font-semibold"
-            />
-          </span>
-        </button>
-        <Button size="lg" className="min-h-12" onClick={fireKot} disabled={busy || !canFire}>
-          <Flame size={16} /> Fire
-        </Button>
-      </div>
 
       <Sheet open={cartOpen} onOpenChange={setCartOpen}>
         <SheetContent className="flex flex-col max-h-[86vh]">
@@ -522,6 +521,20 @@ export const OrderRoute = ({
         local={keepLocal}
         onOpenChange={(v) => { setAskCustomer(v); if (!v) setKeepLocal(false); }}
         onSettle={settle}
+      />
+
+      <ConfirmDialog
+        open={askVoid}
+        title="Void this order?"
+        description={`${who ? `${who}'s order` : "This order"} will be cancelled. This cannot be undone.`}
+        confirmLabel="Void order"
+        danger
+        busy={busy}
+        onConfirm={() => {
+          setAskVoid(false);
+          void voidOrder();
+        }}
+        onOpenChange={setAskVoid}
       />
 
       {/* Paper */}
@@ -565,6 +578,13 @@ const CustomerDialog = ({
 }) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  // Each settle is a new customer — never pre-fill the last one.
+  useEffect(() => {
+    if (!open) {
+      setName("");
+      setPhone("");
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

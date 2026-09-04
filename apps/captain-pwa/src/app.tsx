@@ -81,19 +81,13 @@ export const App = () => {
   // 403 SUBSCRIPTION_EXPIRED, which would fail every request anyway.
   if (isExpired(session.subscriptionEndsAt)) return <SubscriptionEnded />;
 
-  // The KDS goes full-bleed outside the shell — it mounts on a kitchen TV.
-  if (route.name === "kds")
-    return (
-      <>
-        <KdsRoute session={session} />
-        <Toaster />
-      </>
-    );
-
   return (
     <>
       <AppShell session={session}>
         {route.name === "tables"   ? <TablesRoute   session={session} /> : null}
+        {/* KDS stays in the shell so the phone tab bar survives; it goes
+            full-bleed (own header, no rail chrome needed) only from lg up. */}
+        {route.name === "kds"      ? <KdsRoute      session={session} /> : null}
         {route.name === "order"    ? <OrderRoute    session={session} orderId={route.orderId} /> : null}
         {route.name === "bill"     ? <BillRoute     session={session} billId={route.billId} /> : null}
         {route.name === "settings" ? <SettingsRoute session={session} /> : null}

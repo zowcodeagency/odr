@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import { Badge, IconButton, KotTicket, ThemeToggle } from "@odr/ui";
+import { Badge, KotTicket } from "@odr/ui";
 import { api } from "../lib/api.ts";
-import { navigate } from "../lib/router.ts";
 import { useAsync } from "../lib/use-async.ts";
 import { toast } from "../lib/toast.tsx";
 import { CHANNEL_LABEL, CHANNEL_TONE, minutesSince } from "../features/ordering/channels.ts";
@@ -37,38 +35,37 @@ export const KdsRoute = ({ session }: { session: Session }) => {
 
   return (
     <div className="min-h-full flex flex-col bg-[var(--bg-canvas)]">
-      <header className="px-4 sm:px-6 py-4 flex items-center gap-3 border-b border-[var(--line-subtle)]">
-        <IconButton label="Back" size="sm" onClick={() => navigate({ name: "tables" })}>
-          <ArrowLeft size={16} />
-        </IconButton>
+      {/* The shell supplies navigation and the theme toggle; this row is the pass's own status line. */}
+      <header className="flex px-4 sm:px-6 py-3 items-center gap-3 border-b border-[var(--line-subtle)]">
         <div className="flex-1 min-w-0">
-          <h1 className="text-[16px] font-semibold tracking-[-0.01em] truncate">
-            Kitchen display · {session.outletName}
-          </h1>
+          <h1 className="text-[16px] font-semibold tracking-[-0.01em] truncate">Kitchen display</h1>
           <p className="text-[13px] text-[var(--fg-tertiary)]">
             {kots.length} KOT{kots.length === 1 ? "" : "s"} in flight
           </p>
         </div>
-        <span className="font-mono text-[15px] font-medium text-[var(--fg-secondary)] hidden sm:inline">
+        <span className="font-mono text-[15px] font-medium text-[var(--fg-secondary)]">
           {new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
         </span>
-        <ThemeToggle />
       </header>
 
-      <section
-        className="flex-1 p-4 sm:p-6 grid gap-4 content-start"
-        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))" }}
-      >
-        {q.loading && kots.length === 0 ? (
-          <p className="text-[15px] text-[var(--fg-muted)]">Loading the pass…</p>
-        ) : q.error ? (
-          <p className="text-[15px] text-[var(--status-voided)]">{q.error}</p>
-        ) : kots.length === 0 ? (
-          <p className="text-[18px] text-[var(--fg-muted)]">
-            Nothing in the pass. Fired KOTs land here within 5 seconds.
-          </p>
-        ) : (
-          kots.map((k) => (
+      {q.loading && kots.length === 0 ? (
+        <div className="flex-1 px-4 py-16 text-center text-[15px] text-[var(--fg-muted)]">
+          Loading the pass…
+        </div>
+      ) : q.error ? (
+        <div className="flex-1 px-4 py-16 text-center text-[15px] text-[var(--status-voided)]">
+          {q.error}
+        </div>
+      ) : kots.length === 0 ? (
+        <div className="flex-1 px-4 py-16 text-center text-[18px] text-[var(--fg-muted)]">
+          Nothing in the pass. Fired KOTs land here within 5 seconds.
+        </div>
+      ) : (
+        <section
+          className="flex-1 p-4 sm:p-6 grid gap-4 content-start"
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))" }}
+        >
+          {kots.map((k) => (
             <KotTicket
               key={k.id}
               number={kotNumber(k.number)}
@@ -90,9 +87,9 @@ export const KdsRoute = ({ session }: { session: Session }) => {
               onBump={() => void bump(k.id)}
               bumping={bumping === k.id}
             />
-          ))
-        )}
-      </section>
+          ))}
+        </section>
+      )}
 
       <footer className="px-4 sm:px-6 pb-6 flex items-center gap-5 text-[12px] text-[var(--fg-tertiary)]">
         {BANDS.map(([label, color]) => (

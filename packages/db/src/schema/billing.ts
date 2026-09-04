@@ -24,6 +24,8 @@ export const bills = pgTable(
   },
   (t) => [
     index("bills_tenant_idx").on(t.tenantId),
+    // The invoice list: WHERE tenant, outlet, settled_at >= … ORDER BY settled_at DESC.
+    index("bills_outlet_settled_idx").on(t.tenantId, t.outletId, t.settledAt),
     index("bills_order_idx").on(t.orderId),
     uniqueIndex("bills_invoice_unique").on(t.outletId, t.fiscalYear, t.invoiceNumber),
     foreignKey({ columns: [t.outletId, t.tenantId], foreignColumns: [outlets.id, outlets.tenantId], name: "bills_outlet_tenant_fk" }),

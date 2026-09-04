@@ -56,7 +56,7 @@ export const HoldButton = ({
     >
       <span
         aria-hidden
-        className="absolute inset-y-0 left-0 bg-black/20 pointer-events-none"
+        className="absolute inset-y-0 left-0 bg-[var(--fg-primary)]/15 pointer-events-none"
         style={{
           width: holding ? "100%" : "0%",
           transition: holding ? `width ${holdMs}ms linear` : "none",

@@ -29,7 +29,7 @@ export const Toaster = () => {
     <div
       role="status"
       data-print="hide"
-      className="fixed z-[60] left-1/2 -translate-x-1/2 bottom-[max(20px,env(safe-area-inset-bottom))]
+      className="fixed z-[60] left-1/2 -translate-x-1/2 bottom-[calc(var(--bottom-nav-h,0px)_+_16px)] md:bottom-[max(20px,env(safe-area-inset-bottom))]
                  max-w-[calc(100vw-32px)] px-4 py-2.5
                  rounded-[var(--radius-2)] bg-[var(--bg-surface-3)]
                  ring-1 ring-[var(--line-strong)] shadow-[var(--shadow-3)]

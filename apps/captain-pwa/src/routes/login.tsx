@@ -155,7 +155,7 @@ export const LoginRoute = () => {
       </section>
 
       {/* Right — sign-in */}
-      <section className="flex flex-col justify-center px-6 py-8 lg:px-12 bg-[var(--bg-surface)]">
+      <section className="flex flex-col justify-center px-6 pb-8 pt-[max(2rem,env(safe-area-inset-top))] lg:px-12 bg-[var(--bg-surface)]">
         <div className="flex items-center justify-between lg:justify-end">
           <span className="lg:hidden">
             <Logo size={28} wordmark />

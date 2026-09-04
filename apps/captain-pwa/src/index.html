@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Odr · Captain</title>
     <meta name="theme-color" content="#fbfbfc" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#17181d" media="(prefers-color-scheme: dark)" />
@@ -40,9 +40,12 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- media=print + onload swap: the font sheet no longer blocks first paint. -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      media="print"
+      onload="this.media='all'"
     />
 
     <link rel="stylesheet" href="./index.css" />

@@ -32,7 +32,8 @@ window.addEventListener("beforeinstallprompt", (e) => {
 
 // Server-supplied runtime config (diner origin for the table QRs). Awaited
 // before first paint so nothing downstream has to deal with it arriving late.
-window.__ODR = await fetch("/config.json")
+// The production build inlines it into index.html; only dev has to fetch.
+window.__ODR ??= await fetch("/config.json")
   .then((r) => r.json() as Promise<{ dinerOrigin?: string }>)
   .catch(() => ({}));
 

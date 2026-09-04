@@ -26,7 +26,7 @@ const Row = ({
   <Tag
     onClick={onClick}
     className="w-full flex items-center gap-3 px-4 py-3 text-left
-               rounded-[var(--radius-4)] bg-[var(--bg-surface)] shadow-[var(--shadow-1)]
+               rounded-[var(--radius-3)] bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
                transition-colors duration-[var(--dur-quick)]
                enabled:active:bg-[var(--bg-surface-2)]"
   >
@@ -55,7 +55,7 @@ export const MoreRoute = ({ session }: { session: Session }) => {
   const manage = canManage(session.role);
   return (
     <div className="max-w-lg mx-auto p-4 space-y-3">
-      <div className="flex items-center gap-3 px-4 py-4 rounded-[var(--radius-4)] bg-[var(--bg-surface)] shadow-[var(--shadow-1)]">
+      <div className="flex items-center gap-3 px-4 py-4 rounded-[var(--radius-3)] bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]">
         <span
           className="h-12 w-12 shrink-0 grid place-items-center rounded-full
                      bg-[var(--accent-soft)] text-[var(--accent)] text-[18px] font-semibold uppercase"

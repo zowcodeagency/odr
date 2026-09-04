@@ -48,3 +48,5 @@ export {
   type TaxBreakdownRow,
 } from "./components/receipt.tsx";
 export { ThemeToggle, type Theme } from "./components/theme-toggle.tsx";
+
+export { ConfirmDialog } from "./components/confirm-dialog.tsx";

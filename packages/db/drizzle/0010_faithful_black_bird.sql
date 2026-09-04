@@ -1,0 +1,1 @@
+CREATE INDEX "bills_outlet_settled_idx" ON "bills" USING btree ("tenant_id","outlet_id","settled_at");

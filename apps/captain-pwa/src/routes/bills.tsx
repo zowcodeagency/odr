@@ -196,7 +196,7 @@ export const BillsRoute = ({ session }: { session: Session }) => {
       ) : null}
 
       {/* Done — the invoices. */}
-      <div className="flex items-center justify-between gap-3 mb-2.5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2.5">
         <h2 className="text-[13px] font-medium text-[var(--fg-secondary)]">
           Invoices · today and yesterday
         </h2>
@@ -209,7 +209,7 @@ export const BillsRoute = ({ session }: { session: Session }) => {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Invoice, name or phone"
-            className="h-11 w-[210px] pl-9 pr-3 rounded-[var(--radius-2)]
+            className="h-11 w-full sm:w-[210px] pl-9 pr-3 rounded-[var(--radius-2)]
                        bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
                        text-[13px] placeholder:text-[var(--fg-muted)]
                        focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
@@ -278,7 +278,7 @@ const Stat = ({
 }) => (
   <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
     <p className="text-[12px] text-[var(--fg-tertiary)]">{label}</p>
-    <p className="mt-1.5 text-[21px] sm:text-[24px] font-semibold leading-none tracking-[-0.02em] font-mono">
+    <p className="mt-1.5 text-[18px] sm:text-[24px] font-semibold leading-none tracking-[-0.02em] font-mono break-words">
       {value}
     </p>
     <p className="mt-1.5 text-[12px] text-[var(--fg-muted)]">{hint}</p>

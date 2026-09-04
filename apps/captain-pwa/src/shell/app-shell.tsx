@@ -16,7 +16,9 @@ export const AppShell = ({
   const warn = session.subscriptionEndsAt !== null && days !== null && days <= 7;
 
   return (
-    <div className="h-full flex bg-[var(--bg-canvas)]">
+    <div
+      className="h-full flex bg-[var(--bg-canvas)] [--bottom-nav-h:calc(56px_+_env(safe-area-inset-bottom))] md:[--bottom-nav-h:0px]"
+    >
       <NavRail canManage={canManage(session.role)} canSeeSales={canSeeSales(session.role)} isOwner={session.role === "owner"} />
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar session={session} />

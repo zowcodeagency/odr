@@ -25,7 +25,7 @@ export const Topbar = ({ session }: TopbarProps) => {
 
   return (
     <header
-      className="shrink-0 px-3 sm:px-5 h-14 flex items-center gap-2
+      className="shrink-0 px-3 sm:px-5 min-h-14 pt-[env(safe-area-inset-top)] flex items-center gap-2
                  border-b border-[var(--line-subtle)] bg-[var(--bg-canvas)]"
       data-print="hide"
     >

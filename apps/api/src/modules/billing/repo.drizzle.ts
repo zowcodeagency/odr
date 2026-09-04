@@ -1,11 +1,12 @@
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { DB } from "@odr/db";
-import { bills, billLines, outlets } from "@odr/db/schema";
+import { bills, billLines, orders, outlets } from "@odr/db/schema";
 import { ConflictError } from "@odr/shared";
 import type { BillInsert, BillingRepo } from "./ports.ts";
 import { formatInvoiceNumber, type Bill, type BillLine, type BillSummary } from "./domain.ts";
 
-const toDomain = (b: typeof bills.$inferSelect, lines: BillLine[]): Bill => ({
+const toDomain = (b: typeof bills.$inferSelect, lines: BillLine[], tableLabel?: string | null): Bill => ({
+  ...(tableLabel !== undefined ? { tableLabel } : {}),
   id: b.id,
   outletId: b.outletId,
   orderId: b.orderId,
@@ -46,10 +47,18 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
   },
 
   async byId(tenantId, id) {
-    const [b] = await db.select().from(bills).where(and(eq(bills.tenantId, tenantId), eq(bills.id, id))).limit(1);
-    if (!b) return null;
-    const ls = await db.select().from(billLines).where(eq(billLines.billId, id));
-    return toDomain(b, ls.map(lineToDomain));
+    // Bill, its table and its lines in one round trip each, in parallel.
+    const [[row], ls] = await Promise.all([
+      db
+        .select({ bill: bills, tableLabel: orders.tableLabel })
+        .from(bills)
+        .leftJoin(orders, eq(orders.id, bills.orderId))
+        .where(and(eq(bills.tenantId, tenantId), eq(bills.id, id)))
+        .limit(1),
+      db.select().from(billLines).where(eq(billLines.billId, id)),
+    ]);
+    if (!row) return null;
+    return toDomain(row.bill, ls.map(lineToDomain), row.tableLabel ?? null);
   },
 
   async list(tenantId, { outletId, from, to, limit }) {

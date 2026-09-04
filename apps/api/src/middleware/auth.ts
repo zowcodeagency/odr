@@ -18,11 +18,11 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
 
   // Tokens live 30 days, so the membership row is the source of truth:
   // removed staff 401 on their next request, role and outlet changes apply immediately.
-  const m = await membershipOf(claims.tid, claims.sub);
+  // Independent lookups — one round trip, not two, on every request.
+  const [m, gate] = await Promise.all([membershipOf(claims.tid, claims.sub), tenantGateOf(claims.tid)]);
   if (!m) throw new UnauthorizedError("membership revoked");
 
   // Subscription gate — null end date means the tenant isn't enforced.
-  const gate = await tenantGateOf(claims.tid);
   if (isExpired(gate.subscriptionEnd)) {
     throw new DomainError("SUBSCRIPTION_EXPIRED", "subscription expired");
   }

@@ -71,6 +71,13 @@
       "when": 1788542346696,
       "tag": "0009_productive_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788543747889,
+      "tag": "0010_faithful_black_bird",
+      "breakpoints": true
     }
   ]
 }

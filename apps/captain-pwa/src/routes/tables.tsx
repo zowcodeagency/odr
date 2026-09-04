@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bike, Loader2, Plus, RefreshCw } from "lucide-react";
 import {
   Badge,
@@ -303,16 +303,23 @@ export const TablesRoute = ({ session }: { session: Session }) => {
       ) : null}
 
       {/* Filters */}
-      <div role="tablist" className="flex flex-wrap items-center gap-1.5 mb-4">
+      <div
+        role="tablist"
+        className="inline-flex max-w-full p-1 gap-1 mb-4 rounded-[var(--radius-pill)]
+                   bg-[var(--bg-surface-2)] ring-1 ring-[var(--line-subtle)]
+                   overflow-x-auto [scrollbar-width:none]"
+      >
         {FILTERS.map((f) => (
           <button
             key={f.key}
+            role="tab"
+            aria-selected={filter === f.key}
             onClick={() => setFilter(f.key)}
-            className={
+            className={`shrink-0 whitespace-nowrap px-4 min-h-10 rounded-[var(--radius-pill)] text-[13px] transition-colors duration-[var(--dur-quick)] ${
               filter === f.key
-                ? "px-3.5 h-11 text-[13px] font-medium rounded-[var(--radius-2)] bg-[var(--accent)] text-[var(--fg-on-accent)]"
-                : "px-3.5 h-11 text-[13px] rounded-[var(--radius-2)] text-[var(--fg-secondary)] ring-1 ring-[var(--line-default)] hover:bg-[var(--bg-surface-2)]"
-            }
+                ? "bg-[var(--bg-surface)] font-medium shadow-[var(--shadow-1)]"
+                : "text-[var(--fg-muted)]"
+            }`}
           >
             {f.label}
           </button>
@@ -320,19 +327,49 @@ export const TablesRoute = ({ session }: { session: Session }) => {
       </div>
 
       {/* Floor grid */}
-      {tiles.length === 0 && !floor.loading ? (
+      {floor.loading && tiles.length === 0 ? (
+        <section
+          aria-busy
+          aria-label="floor plan"
+          className={layout === "compact" ? "grid gap-2" : "grid gap-2.5 sm:gap-3"}
+          style={{
+            gridTemplateColumns: `repeat(auto-fill, minmax(${layout === "compact" ? 116 : 150}px, 1fr))`,
+          }}
+        >
+          {Array.from({ length: 8 }, (_, i) => (
+            <div
+              key={i}
+              className="min-h-[132px] rounded-[var(--radius-3)] bg-[var(--bg-surface-2)] animate-pulse"
+            />
+          ))}
+        </section>
+      ) : visible.length === 0 ? (
         <div className="rounded-[var(--radius-3)] ring-1 ring-[var(--line-default)] bg-[var(--bg-surface)] p-8 text-center">
-          <p className="text-[15px] font-medium">No tables yet</p>
-          <p className="mt-1.5 text-[13px] text-[var(--fg-tertiary)]">
-            Add your tables in Settings and they'll show up here.
-          </p>
-          <Button
-            size="lg"
-            className="mt-5"
-            onClick={() => navigate({ name: "settings" })}
-          >
-            Go to Settings
-          </Button>
+          {filter === "all" ? (
+            <>
+              <p className="text-[15px] font-medium">No tables yet</p>
+              <p className="mt-1.5 text-[13px] text-[var(--fg-tertiary)]">
+                Add your tables in Settings and they'll show up here.
+              </p>
+              <Button
+                size="lg"
+                className="mt-5"
+                onClick={() => navigate({ name: "settings" })}
+              >
+                Go to Settings
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-[15px] font-medium">Nothing matches this filter</p>
+              <p className="mt-1.5 text-[13px] text-[var(--fg-tertiary)]">
+                No table is {FILTERS.find((f) => f.key === filter)?.label.toLowerCase()} right now.
+              </p>
+              <Button size="lg" variant="outline" className="mt-5" onClick={() => setFilter("all")}>
+                Show all
+              </Button>
+            </>
+          )}
         </div>
       ) : (
         <section
@@ -440,6 +477,13 @@ const OffTableDialog = ({
   const [channel, setChannel] = useState<Channel>("parcel");
   const [who, setWho] = useState("");
   const aggregator = channel === "zomato" || channel === "swiggy";
+  // Each off-table order starts clean — never pre-fill the last one.
+  useEffect(() => {
+    if (!open) {
+      setChannel("parcel");
+      setWho("");
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

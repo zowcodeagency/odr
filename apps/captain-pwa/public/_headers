@@ -1,0 +1,5 @@
+# Bun names every bundle chunk by content hash, so they can be cached forever.
+/chunk-*
+  Cache-Control: public, max-age=31536000, immutable
+/config.json
+  Cache-Control: public, max-age=60

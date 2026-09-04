@@ -23,9 +23,11 @@ export const BillRoute = ({
     // Device-kept bills first: instant, and the cloud has never seen them.
     const local = await localBills.get(billId).catch(() => null);
     const bill = local ?? (await api.bill(billId));
-    // The bill carries no table label — the order it settled does.
-    const order = await api.order(bill.orderId).catch(() => null);
-    return { bill, order, local: local !== null && !local.syncedAt };
+    // Newer bills carry their table; older ones need the order for it.
+    const tableLabel = bill.tableLabel !== undefined
+      ? bill.tableLabel
+      : (await api.order(bill.orderId).catch(() => null))?.tableLabel ?? null;
+    return { bill, tableLabel, local: local !== null && !local.syncedAt };
   }, [billId]);
 
   if (q.loading && !q.data)
@@ -40,8 +42,8 @@ export const BillRoute = ({
       </div>
     );
 
-  const { bill, order, local } = q.data;
-  const tableLabel = order?.tableLabel ?? "—";
+  const { bill, local } = q.data;
+  const tableLabel = q.data.tableLabel || "—";
   const currency = bill.currency;
   const money = (m: string) => formatMinor(m, currency, { withSymbol: false });
   const upi = session.outletUpiId

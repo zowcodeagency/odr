@@ -26,8 +26,9 @@
   /* ── text — warm near-browns instead of blue-grays ──────────────── */
   --fg-primary:     light-dark(oklch(23% 0.012 60), oklch(96.5% 0.006 85));
   --fg-secondary:   light-dark(oklch(39% 0.012 60), oklch(84% 0.008 85));
-  --fg-tertiary:    light-dark(oklch(51% 0.012 60), oklch(69% 0.010 80));
-  --fg-muted:       light-dark(oklch(60% 0.012 65), oklch(57% 0.010 75));
+  /* 4.5:1 on --bg-surface at 12px — hints and meta lines are read in daylight at the counter. */
+  --fg-tertiary:    light-dark(oklch(46% 0.012 60), oklch(72% 0.010 80));
+  --fg-muted:       light-dark(oklch(53% 0.012 65), oklch(64% 0.010 75));
   --fg-on-accent:   oklch(100% 0 0);
 
   /* ── hairlines ───────────────────────────────────────────────────── */
@@ -43,7 +44,7 @@
   --accent-soft:    color-mix(in oklab, var(--accent) 12%, transparent);
 
   /* ── status (distinct hue + luminance, tuned per theme) ──────────── */
-  --status-open:       var(--fg-muted);
+  --status-open:       light-dark(oklch(48% 0.02 60), oklch(70% 0.02 75));
   --status-firing:     light-dark(oklch(58% 0.130  70), oklch(80% 0.140  80));
   /* fired keeps its own blue so it never blurs into settled-green or the accent */
   --status-fired:      light-dark(oklch(52% 0.190 265), oklch(62% 0.170 265));

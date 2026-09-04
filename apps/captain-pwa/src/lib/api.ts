@@ -210,6 +210,8 @@ export interface Bill {
   customerName: string | null;
   customerPhone: string | null;
   settledAt: string;
+  /** Present on newer API builds and device bills; older bills fetch the order for it. */
+  tableLabel?: string | null;
   lines: {
     itemName: string;
     qty: number;

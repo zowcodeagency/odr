@@ -32,6 +32,8 @@ export type Bill = {
   customerPhone: string | null;
   settledAt: string;
   lines: BillLine[];
+  /** From the order it settled — saves the bill screen a second round trip. */
+  tableLabel?: string | null;
 };
 
 /** Row shape for the invoice list — no lines, so one query serves the page. */

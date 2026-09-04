@@ -2,7 +2,7 @@ import { and, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import type { DB } from "@odr/db";
 import { orders, orderLines, kots } from "@odr/db/schema";
 import type { OrderRepo, KotView } from "./ports.ts";
-import { isOpenState, type Kot, type Order, type OrderChannel, type OrderLine, type OrderState } from "./domain.ts";
+import { OPEN_STATES, type Kot, type Order, type OrderChannel, type OrderLine, type OrderState } from "./domain.ts";
 
 type OrderRow = typeof orders.$inferSelect;
 type LineRow = typeof orderLines.$inferSelect;
@@ -177,12 +177,11 @@ export const drizzleOrderRepo = (db: DB): OrderRepo => {
     },
 
     async listOpen(tenantId, outletId) {
-      const rows = await db
+      const open = await db
         .select()
         .from(orders)
-        .where(and(eq(orders.tenantId, tenantId), eq(orders.outletId, outletId)))
+        .where(and(eq(orders.tenantId, tenantId), eq(orders.outletId, outletId), inArray(orders.state, OPEN_STATES)))
         .orderBy(orders.openedAt);
-      const open = rows.filter((o) => isOpenState(o.state as OrderState));
       if (open.length === 0) return [];
       const ids = open.map((o) => o.id);
       const [lines, kotRows] = await Promise.all([

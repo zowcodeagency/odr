@@ -3,7 +3,7 @@
  * (desktop). Colors, font, logo, theme, style variant, plus the floor layout.
  */
 import { useEffect, useState } from "react";
-import { ImagePlus, Loader2 } from "lucide-react";
+import { ChevronDown, ImagePlus, Loader2 } from "lucide-react";
 import { Button } from "@odr/ui";
 import { api } from "../lib/api.ts";
 import { toast } from "../lib/toast.tsx";
@@ -255,19 +255,22 @@ export const BrandingRoute = ({ session }: { session: Session }) => {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Font">
-            <select
-              value={draft.font}
-              onChange={(e) => patch({ font: e.target.value })}
-              className="h-11 w-full px-3 text-[14px] rounded-[var(--radius-2)]
-                         bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
-                         focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-            >
-              {FONTS.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
+            <span className="relative block">
+              <select
+                value={draft.font}
+                onChange={(e) => patch({ font: e.target.value })}
+                className="appearance-none h-11 w-full pl-3 pr-9 text-[14px] rounded-[var(--radius-2)]
+                           bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
+                           focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              >
+                {FONTS.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fg-muted)]" />
+            </span>
           </Field>
           <Field label="Theme">
             <div className="flex gap-2">
@@ -313,23 +316,26 @@ const FloorLayoutSection = () => {
       title="Tables view"
       hint="How the Tables screen shows sales, stats and the table grid — saved on this device."
     >
-      <select
-        value={layout}
-        onChange={(e) => {
-          const l = e.target.value as FloorLayout;
-          setLayout(l);
-          setFloorLayout(l);
-        }}
-        className="h-11 w-full sm:max-w-[320px] px-3 text-[14px] rounded-[var(--radius-2)]
-                   bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
-                   focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-      >
-        {FLOOR_LAYOUTS.map((l) => (
-          <option key={l.key} value={l.key}>
-            {l.label}
-          </option>
-        ))}
-      </select>
+      <span className="relative block w-full sm:max-w-[320px]">
+        <select
+          value={layout}
+          onChange={(e) => {
+            const l = e.target.value as FloorLayout;
+            setLayout(l);
+            setFloorLayout(l);
+          }}
+          className="appearance-none h-11 w-full pl-3 pr-9 text-[14px] rounded-[var(--radius-2)]
+                     bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
+                     focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        >
+          {FLOOR_LAYOUTS.map((l) => (
+            <option key={l.key} value={l.key}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fg-muted)]" />
+      </span>
       <p className="mt-1.5 text-[12px] text-[var(--fg-tertiary)]">
         {FLOOR_LAYOUTS.find((l) => l.key === layout)?.hint}
       </p>

@@ -24,7 +24,11 @@ const result = await Bun.build({
   entrypoints: [`${root}/src/index.html`],
   outdir,
   minify: true,
-  sourcemap: "linked",
+  // Sourcemaps are 3.8 MB of upload per deploy and leak source; opt in locally.
+  sourcemap: process.env["SOURCEMAP"] ? "linked" : "none",
+  // Without this React resolves its development build (1 MB, StrictMode
+  // double-invokes every effect → every fetch fired twice in production).
+  define: { "process.env.NODE_ENV": JSON.stringify("production") },
   plugins: [tailwind],
 });
 
@@ -45,10 +49,11 @@ if (existsSync(`${root}/public`)) {
 // The dev server serves this route; on Pages it is a static file baked from
 // the build environment. Same shape either way.
 if (app === "captain-pwa") {
-  await Bun.write(
-    `${outdir}/config.json`,
-    JSON.stringify({ dinerOrigin: process.env["DINER_ORIGIN"] ?? "" }),
-  );
+  const config = JSON.stringify({ dinerOrigin: process.env["DINER_ORIGIN"] ?? "" });
+  await Bun.write(`${outdir}/config.json`, config);
+  // Inline it too, so main.tsx never has to await a round trip before first render.
+  const html = `${outdir}/index.html`;
+  await Bun.write(html, (await Bun.file(html).text()).replace("<head>", `<head><script>window.__ODR=${config}</script>`));
 }
 
 const kb = (n: number) => `${(n / 1024).toFixed(0)} KB`;

@@ -29,13 +29,21 @@ const real = (): DB => {
   return _db;
 };
 
-/** Run fn with a fresh request-scoped connection; closes it afterwards. */
-export async function withRequestDb<T>(url: string, fn: () => Promise<T>): Promise<T> {
-  const sql = postgres(url, { prepare: false, max: 5 });
+/**
+ * Run fn with a fresh request-scoped connection; closes it afterwards.
+ * `defer` (Workers' ctx.waitUntil) takes the teardown off the response path.
+ */
+export async function withRequestDb<T>(
+  url: string,
+  fn: () => Promise<T>,
+  defer: (p: Promise<unknown>) => void = (p) => void p,
+): Promise<T> {
+  // One request never needs more than one connection; Hyperdrive pools behind it.
+  const sql = postgres(url, { prepare: false, max: 1 });
   try {
     return await als.run(drizzle(sql, { schema }), fn);
   } finally {
-    await sql.end({ timeout: 5 });
+    defer(sql.end({ timeout: 5 }));
   }
 }
 

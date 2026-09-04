@@ -30,7 +30,8 @@
     min-width: 44px;
   }
 
-  input,
+  /* Checkboxes and radios keep their natural size — the wrapping label is the target. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
   select,
   textarea {
     min-height: 44px;

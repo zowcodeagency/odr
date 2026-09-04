@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { CloudUpload, HardDrive, Loader2, Printer, QrCode, Trash2, UserPlus, Wifi } from "lucide-react";
-import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Input } from "@odr/ui";
+import { ChevronDown, CloudUpload, HardDrive, Loader2, Printer, QrCode, Trash2, UserPlus, Wifi } from "lucide-react";
+import { Button, ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogTitle, Input } from "@odr/ui";
 import { ApiError, api, errorCode, type Staff, type Table } from "../lib/api.ts";
 import { navigate } from "../lib/router.ts";
 import { useAsync, type Async } from "../lib/use-async.ts";
@@ -131,9 +131,11 @@ const OutletSection = ({ session }: { session: Session }) => {
             Find yours in PhonePe, Google Pay or Paytm under your profile.
           </p>
           {form.upiId.trim() ? (
-            <div className="sm:col-span-2 flex items-center gap-4 p-3 rounded-[var(--radius-2)] ring-1 ring-[var(--line-default)] bg-white">
-              <QrImage value={upiPayUrl({ upiId: form.upiId.trim(), payee: form.name, amountMinor: "10000", note: "Preview" })} size={96} />
-              <p className="text-[13px] text-black">Preview for ₹100.00 — scan with any UPI app to check it opens the right account before you save.</p>
+            <div className="sm:col-span-2 flex items-center gap-4 p-3 rounded-[var(--radius-2)] ring-1 ring-[var(--line-default)] bg-[var(--bg-surface-2)]">
+              <span className="shrink-0 bg-white p-2 rounded-[var(--radius-2)]">
+                <QrImage value={upiPayUrl({ upiId: form.upiId.trim(), payee: form.name, amountMinor: "10000", note: "Preview" })} size={96} />
+              </span>
+              <p className="text-[13px] text-[var(--fg-secondary)]">Preview for ₹100.00 — scan with any UPI app to check it opens the right account before you save.</p>
             </div>
           ) : null}
           <Button type="submit" size="lg" disabled={busy} className="sm:col-span-2 sm:w-auto sm:justify-self-start">
@@ -181,7 +183,7 @@ export const SettingsRoute = ({ session }: { session: Session }) => {
 
       <nav
         aria-label="settings sections"
-        className="flex p-1 gap-1 rounded-[var(--radius-pill)] bg-[var(--bg-surface-2)]
+        className="flex overflow-x-auto [scrollbar-width:none] p-1 gap-1 rounded-[var(--radius-pill)] bg-[var(--bg-surface-2)]
                    ring-1 ring-[var(--line-subtle)] self-start w-full sm:w-auto"
       >
         {TABS.filter((t) => t.key !== "device" || session.localBilling).map((t) => (
@@ -189,7 +191,7 @@ export const SettingsRoute = ({ session }: { session: Session }) => {
             key={t.key}
             onClick={() => setTab(t.key)}
             aria-current={tab === t.key ? "page" : undefined}
-            className={`flex-1 sm:flex-none sm:px-6 min-h-11 rounded-[var(--radius-pill)] text-[14px]
+            className={`shrink-0 px-4 sm:px-6 whitespace-nowrap min-h-11 rounded-[var(--radius-pill)] text-[14px]
                         transition-colors duration-[var(--dur-quick)] ${
                           tab === t.key
                             ? "bg-[var(--bg-surface)] font-medium shadow-[var(--shadow-1)]"
@@ -220,6 +222,7 @@ export const SettingsRoute = ({ session }: { session: Session }) => {
 const TablesSection = ({ session, q }: { session: Session; q: Async<Table[]> }) => {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState<Table | null>(null);
   const tables = q.data ?? [];
   const preview = parseLabels(input);
 
@@ -244,6 +247,8 @@ const TablesSection = ({ session, q }: { session: Session; q: Async<Table[]> }) 
       q.reload();
     } catch (e) {
       toast(e instanceof Error ? e.message : "Could not remove the table");
+    } finally {
+      setRemoving(null);
     }
   };
 
@@ -292,7 +297,7 @@ const TablesSection = ({ session, q }: { session: Session; q: Async<Table[]> }) 
             >
               {t.label}
               <button
-                onClick={() => void remove(t)}
+                onClick={() => setRemoving(t)}
                 aria-label={`Remove ${t.label}`}
                 className="h-11 w-11 grid place-items-center text-[var(--fg-muted)] hover:text-[var(--status-voided)]"
               >
@@ -302,6 +307,14 @@ const TablesSection = ({ session, q }: { session: Session; q: Async<Table[]> }) 
           ))
         )}
       </div>
+      <ConfirmDialog
+        open={removing !== null}
+        title={`Remove table ${removing?.label ?? ""}?`}
+        description="Its past orders and bills are unaffected."
+        confirmLabel="Remove"
+        onConfirm={() => removing && void remove(removing)}
+        onOpenChange={(v) => !v && setRemoving(null)}
+      />
     </Section>
   );
 };
@@ -347,14 +360,16 @@ const QrSection = ({ session, q }: { session: Session; q: Async<Table[]> }) => {
             {tables.map((t) => (
               <div
                 key={t.id}
-                className="p-3 text-center rounded-[var(--radius-2)] ring-1 ring-[var(--line-default)] bg-white"
+                className="p-3 text-center rounded-[var(--radius-2)] ring-1 ring-[var(--line-default)] bg-[var(--bg-surface-2)]"
               >
-                <QrImage
-                  value={tableQrUrl(session.outletId, t.label, token)}
-                  size={104}
-                  className="mx-auto"
-                />
-                <p className="mt-2 text-[13px] font-medium text-black">{t.label}</p>
+                <span className="inline-block bg-white p-2 rounded-[var(--radius-2)]">
+                  <QrImage
+                    value={tableQrUrl(session.outletId, t.label, token)}
+                    size={104}
+                    className="mx-auto"
+                  />
+                </span>
+                <p className="mt-2 text-[13px] font-medium text-[var(--fg-secondary)]">{t.label}</p>
               </div>
             ))}
           </div>
@@ -371,6 +386,7 @@ const DeviceSection = () => {
   const q = useAsync(() => localBills.all(), []);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
+  const [confirmClear, setConfirmClear] = useState(false);
   const bills = q.data ?? [];
   const pending = bills.filter((b) => !b.syncedAt);
   const failed = pending.filter((b) => b.syncError);
@@ -400,11 +416,12 @@ const DeviceSection = () => {
     }
   };
 
+  const clearWarn = pending.length
+    ? `${pending.length} bill${pending.length === 1 ? " has" : "s have"} never been sent to the cloud and will be lost for good. Clear anyway?`
+    : `Remove ${bills.length} bill${bills.length === 1 ? "" : "s"} from this device? They stay in the cloud.`;
+
   const clear = async () => {
-    const warn = pending.length
-      ? `${pending.length} bill${pending.length === 1 ? " has" : "s have"} never been sent to the cloud and will be lost for good. Clear anyway?`
-      : `Remove ${bills.length} bill${bills.length === 1 ? "" : "s"} from this device? They stay in the cloud.`;
-    if (!window.confirm(warn)) return;
+    setConfirmClear(false);
     await localBills.clear();
     toast("Device storage cleared");
     q.reload();
@@ -430,10 +447,18 @@ const DeviceSection = () => {
           {busy ? <Loader2 size={16} className="animate-spin" /> : <CloudUpload size={16} />}
           {progress || `Sync ${pending.length || ""} to cloud`}
         </Button>
-        <Button size="lg" variant="outline" className="text-[var(--status-voided)]" onClick={() => void clear()} disabled={busy || bills.length === 0}>
+        <Button size="lg" variant="outline" className="text-[var(--status-voided)]" onClick={() => setConfirmClear(true)} disabled={busy || bills.length === 0}>
           <Trash2 size={16} /> Clear this device
         </Button>
       </div>
+      <ConfirmDialog
+        open={confirmClear}
+        title="Clear this device?"
+        description={clearWarn}
+        confirmLabel="Clear"
+        onConfirm={() => void clear()}
+        onOpenChange={setConfirmClear}
+      />
 
       {failed.length > 0 ? (
         <ul className="mt-4 text-[13px] space-y-1">
@@ -562,19 +587,21 @@ const StaffSection = ({ session }: { session: Session }) => {
   const [form, setForm] = useState(BLANK_MEMBER);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState<Staff | null>(null);
   const staff: Staff[] = q.data ?? [];
   // Only owners hold user:write — a manager sees the list, read-only.
   const isOwner = session.role === "owner";
   const owners = staff.filter((s) => s.role === "owner").length;
 
   const remove = async (s: Staff) => {
-    if (!window.confirm(`Remove ${s.fullName}? They will no longer be able to sign in.`)) return;
     try {
       await api.removeStaff(s.id);
       q.reload();
       toast(`${s.fullName} removed`);
     } catch (e) {
       toast(e instanceof Error ? e.message : "Could not remove them");
+    } finally {
+      setRemoving(null);
     }
   };
 
@@ -622,7 +649,7 @@ const StaffSection = ({ session }: { session: Session }) => {
                 {/* Never offer the two removals the API would refuse anyway. */}
                 {isOwner && s.id !== session.userId && !(s.role === "owner" && owners === 1) ? (
                   <button
-                    onClick={() => void remove(s)}
+                    onClick={() => setRemoving(s)}
                     aria-label={`Remove ${s.fullName}`}
                     className="h-11 w-11 grid place-items-center text-[var(--fg-muted)] hover:text-[var(--status-voided)]"
                   >
@@ -651,6 +678,15 @@ const StaffSection = ({ session }: { session: Session }) => {
           <UserPlus size={16} /> Add member
         </Button>
       )}
+
+      <ConfirmDialog
+        open={removing !== null}
+        title={`Remove ${removing?.fullName ?? ""}?`}
+        description="They will no longer be able to sign in."
+        confirmLabel="Remove"
+        onConfirm={() => removing && void remove(removing)}
+        onOpenChange={(v) => !v && setRemoving(null)}
+      />
 
       {open ? (
         <Dialog open onOpenChange={(v) => !v && setOpen(false)}>
@@ -696,33 +732,39 @@ const StaffSection = ({ session }: { session: Session }) => {
                 />
               </Field>
               <Field label="Role">
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  className="h-11 w-full px-3 text-[14px] rounded-[var(--radius-2)]
-                             bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
-                             focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                >
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              {form.role !== "owner" && form.role !== "manager" ? (
-                <Field label="Works at">
+                <span className="relative block">
                   <select
-                    value={form.outletId}
-                    onChange={(e) => setForm({ ...form, outletId: e.target.value })}
-                    className="h-11 w-full px-3 text-[14px] rounded-[var(--radius-2)]
+                    value={form.role}
+                    onChange={(e) => setForm({ ...form, role: e.target.value })}
+                    className="appearance-none h-11 w-full pl-3 pr-9 text-[14px] rounded-[var(--radius-2)]
                                bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
                                focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                   >
-                    {session.outlets.map((o) => (
-                      <option key={o.id} value={o.id}>{o.name}</option>
+                    {ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
                     ))}
                   </select>
+                  <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fg-muted)]" />
+                </span>
+              </Field>
+              {form.role !== "owner" && form.role !== "manager" ? (
+                <Field label="Works at">
+                  <span className="relative block">
+                    <select
+                      value={form.outletId}
+                      onChange={(e) => setForm({ ...form, outletId: e.target.value })}
+                      className="appearance-none h-11 w-full pl-3 pr-9 text-[14px] rounded-[var(--radius-2)]
+                                 bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
+                                 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                    >
+                      {session.outlets.map((o) => (
+                        <option key={o.id} value={o.id}>{o.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fg-muted)]" />
+                  </span>
                 </Field>
               ) : (
                 <p className="self-end pb-3 text-[12px] text-[var(--fg-tertiary)]">Sees every outlet.</p>

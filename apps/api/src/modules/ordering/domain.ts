@@ -58,8 +58,8 @@ export const assertTransition = (from: OrderState, to: OrderState): void => {
   }
 };
 
-export const isOpenState = (s: OrderState): boolean =>
-  s === "open" || s === "items_added" || s === "kot_fired";
+export const OPEN_STATES: OrderState[] = ["open", "items_added", "kot_fired"];
+export const isOpenState = (s: OrderState): boolean => OPEN_STATES.includes(s);
 
 /** dine_in must sit at a table; every other channel is off-table. */
 export const requiresTable = (channel: OrderChannel): boolean => channel === "dine_in";

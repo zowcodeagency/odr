@@ -51,21 +51,20 @@ export const QrSheetRoute = ({ session }: { session: Session }) => {
         </Button>
       </header>
 
-      <label
-        data-print="hide"
-        className="mb-4 inline-flex items-center gap-2.5 text-[14px] cursor-pointer select-none"
-      >
-        <input
-          type="checkbox"
-          checked={branding}
-          onChange={(e) => setBranding(e.target.checked)}
-          className="h-4.5 w-4.5 accent-[var(--accent)]"
-        />
-        Show branding
-        <span className="text-[12px] text-[var(--fg-muted)]">
+      <p data-print="hide" className="mb-4 text-[14px] select-none">
+        <label className="inline-flex items-center gap-2 min-h-11 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={branding}
+            onChange={(e) => setBranding(e.target.checked)}
+            className="h-4.5 w-4.5 accent-[var(--accent)]"
+          />
+          Show branding
+        </label>
+        <span className="ml-1.5 text-[12px] text-[var(--fg-muted)]">
           — off prints bare codes for your own card design
         </span>
-      </label>
+      </p>
 
       {tables.length === 0 ? (
         <p className="text-[13px] text-[var(--fg-muted)]">

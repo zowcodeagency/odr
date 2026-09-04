@@ -52,6 +52,7 @@ export const buildLocalBill = (input: {
     customerName: input.customerName ?? null,
     customerPhone: input.customerPhone ?? null,
     settledAt: input.settledAt,
+    tableLabel: input.order.tableLabel ?? null,
     lines,
   };
 };
