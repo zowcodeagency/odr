@@ -49,7 +49,7 @@ if (existsSync(`${root}/public`)) {
 // The dev server serves this route; on Pages it is a static file baked from
 // the build environment. Same shape either way.
 if (app === "captain-pwa") {
-  const config = JSON.stringify({ dinerOrigin: process.env["DINER_ORIGIN"] ?? "" });
+  const config = JSON.stringify({ dinerOrigin: process.env["DINER_ORIGIN"] ?? "", ...(process.env["ODR_OFFLINE"] ? { offline: true } : {}) });
   await Bun.write(`${outdir}/config.json`, config);
   // Inline it too, so main.tsx never has to await a round trip before first render.
   const html = `${outdir}/index.html`;

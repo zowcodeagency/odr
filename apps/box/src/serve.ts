@@ -21,6 +21,9 @@ export const startBox = async (opts: { dataDir: string; port: number; assets: Re
 
   // Compiled binary: unpack the embedded migration files so drizzle's folder-based
   // migrator can read them (the repo's packages/db/drizzle folder doesn't exist inside one).
+  // ponytail: files are overwritten, never removed — a downgrade leaves a newer version's
+  // .sql behind; drizzle follows meta/_journal.json (also overwritten), so they are ignored.
+  // Wipe the folder here if that ever changes.
   const migrations = opts.migrations ?? {};
   if (Object.keys(migrations).length) {
     const dir = join(opts.dataDir, "migrations");
