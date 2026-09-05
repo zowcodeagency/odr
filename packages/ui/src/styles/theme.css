@@ -18,8 +18,8 @@
   @keyframes fade-out  { from { opacity: 1 } to { opacity: 0 } }
   @keyframes sheet-in  { from { transform: translateY(100%) } to { transform: translateY(0) } }
   @keyframes sheet-out { from { transform: translateY(0) } to { transform: translateY(100%) } }
-  @keyframes pop-in    { from { opacity: 0; transform: translate(-50%, -50%) scale(0.96) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }
-  @keyframes pop-out   { from { opacity: 1; transform: translate(-50%, -50%) scale(1) } to { opacity: 0; transform: translate(-50%, -50%) scale(0.98) } }
+  @keyframes pop-in    { from { opacity: 0; transform: scale(0.96) } to { opacity: 1; transform: scale(1) } }
+  @keyframes pop-out   { from { opacity: 1; transform: scale(1) } to { opacity: 0; transform: scale(0.98) } }
   --color-canvas:        var(--bg-canvas);
   --color-surface:       var(--bg-surface);
   --color-surface-2:     var(--bg-surface-2);

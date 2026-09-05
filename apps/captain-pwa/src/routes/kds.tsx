@@ -69,7 +69,7 @@ export const KdsRoute = ({ session }: { session: Session }) => {
             <KotTicket
               key={k.id}
               number={kotNumber(k.number)}
-              tableLabel={k.tableLabel}
+              tableLabel={k.tableLabel || CHANNEL_LABEL[k.channel ?? "dine_in"]}
               {...(k.channel && k.channel !== "dine_in"
                 ? {
                     badge: (

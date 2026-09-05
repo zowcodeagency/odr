@@ -37,7 +37,9 @@ export const errorCode = (e: unknown): string | undefined => {
 const message = (status: number, body: unknown): string => {
   const err = errorField(body);
   const m = typeof err === "string" ? err : err?.message;
-  return m ?? `Request failed (${status})`;
+  // Zod issues ride in meta; name the first bad field so "invalid payload" is actionable.
+  const issue = typeof err === "object" ? (err as { meta?: { issues?: { path?: (string | number)[] }[] } }).meta?.issues?.[0]?.path?.join(".") : undefined;
+  return (m ?? `Request failed (${status})`) + (issue ? ` (${issue})` : "");
 };
 
 const request = async <T>(path: string, init: RequestInit = {}): Promise<T> => {
@@ -190,7 +192,7 @@ export interface Kot {
   id: string;
   orderId: string;
   number: string;
-  tableLabel: string;
+  tableLabel: string | null;
   channel?: Channel;
   firedAt: string;
   lines: { itemName: string; qty: number; note?: string | null }[];

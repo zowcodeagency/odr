@@ -9,7 +9,7 @@ const addressSchema = z.object({
   line2: z.string().optional(),
   city: z.string().min(1),
   state: z.string().min(1),
-  pincode: z.string().min(3),
+  pincode: z.string().min(1),
   country: z.string().min(2).max(2),
 });
 
@@ -20,7 +20,7 @@ const settingsSchema = z
     printerIp: z.string().min(1).max(255).nullable(),
     printerPort: z.number().int().min(1).max(65535),
     name: z.string().trim().min(1).max(80),
-    gstin: z.string().trim().length(15).nullable(),
+    gstin: z.string().trim().min(1).max(15).nullable(),
     address: addressSchema,
     invoicePrefix: z.string().trim().min(1).max(8),
     // null removes the payment QR from the bill.
