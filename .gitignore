@@ -16,3 +16,6 @@ apps/box/.data/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# remotion renders
+apps/promo/out
