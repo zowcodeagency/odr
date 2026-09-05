@@ -156,22 +156,23 @@ PC) install. Each is a separate decision later.
 
 ## Risks
 - PGlite in compiled Bun: VERIFIED 2026-09-05 on macOS (arm64) — all 12 migrations
-  applied (~830-870ms), round-trip ok. Plain `new PGlite(dir)` fails inside `bun build
-  --compile` (ENOENT reading pglite.data/pglite.wasm from bunfs); needs the embed variant
-  — `pgliteWasmModule` + `initdbWasmModule` + `fsBundle`, built from `pglite.wasm`,
-  `initdb.wasm`, and `pglite.data` imported with `{ type: "file" }` (PGlite 0.5.8 renamed
-  the older `wasmModule` option and added a separate initdb wasm module; Task 2 must use
-  these three, not the two-option shape). Compiled host binary: 77 MB. Windows x64 (135 MB)
-  and Linux arm64 (119 MB) built via `--target=`; not run — no matching hardware at hand.
+  applied, round-trip ok; needs the embed variant (`pgliteWasmModule` + `initdbWasmModule` +
+  `fsBundle` from `pglite.wasm`, `initdb.wasm`, `pglite.data` imported `with { type: "file" }`;
+  PGlite 0.5.8). The finished Box binary (`bun run build:box`) was driven end to end on macOS
+  over HTTP: setup → 201 then 409, owner login, outlets, tables, an order, and data intact
+  after a restart. Windows x64 (136 MB), Linux x64 (120 MB) and Linux arm64 (120 MB) are built
+  by cross-compile but NOT yet run on real hardware — that is the first thing the pilot does.
+  Cross-compiled Windows builds show a console window (`--windows-hide-console` only works when
+  compiling on Windows); the installer plan hides it via the scheduled task instead.
 - Physical: PC asleep, router off, phones on the wrong wifi. Handled at install.
 - Code visibility: the binary contains minified JS and can be extracted by a skilled
   person. Protection is the signed license and the contract, as with all offline software.
 
 ## Plan of work (about two weeks to a pilot)
-1. Spike: PGlite in compiled Bun on Windows + Linux ARM64; run the 60 API tests against it. 1 day.
-2. Database entry + migrations on start. 1 day.
-3. Box entry, embedded static app, offline flag, fonts bundled. 1.5 days.
-4. First-run setup. 1.5 days.
+1. ~~Spike~~ done 2026-09-05 (macOS; Windows/ARM builds pending a hardware run).
+2. ~~Database entry + migrations on start~~ done (`packages/db/src/pglite.ts`).
+3. ~~Box entry, embedded static app, offline flag, fonts bundled~~ done (`apps/box`, `dev/build-box.ts`).
+4. ~~First-run setup~~ done (`/setup` route + setup screen).
 5. License CLI, verify, enter/scan, grace, About screen. 1.5 days.
 6. Updater with signature, rollback, nightly schedule. 2 days.
 7. Backup, export, restore. 1 day.
