@@ -21,7 +21,7 @@ try {
   console.log(`Odr Box · data in ${dataDir}`);
   console.log(`On this computer: ${box.url}`);
   console.log(lan.length ? `On a phone on this wifi: ${lan.map((ip) => `http://${ip}:${actualPort}`).join("  or  ")}` : "No wifi/ethernet address found — connect this computer to the restaurant wifi.");
-  console.log(`First-time setup code: ${box.setupCode} (only needed once, on the setup screen)`);
+  if (box.setupCode) console.log(`First-time setup code: ${box.setupCode} (only needed once, on the setup screen)`);
   for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => void box!.stop().then(() => process.exit(0)));
 } catch (e) {
   console.error(`Odr Box could not start: ${e instanceof Error ? e.message : String(e)}`);

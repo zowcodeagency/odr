@@ -35,8 +35,8 @@ Whatever the machine, the walk-through is identical once the Box is running.
 
 1. **Read the console.** It prints the data folder, the address for this computer
    (`http://localhost:7777`), the address a phone must type (`http://<wifi ip>:7777`),
-   and the six-digit first-time setup code. Write the code down; it changes on every
-   restart until setup is done.
+   and, until setup is done, the six-digit first-time setup code. Write the code down;
+   it changes on every restart, and it stops appearing once the restaurant exists.
 2. **Open the address in a browser on the same machine.** You should see the Odr sign-in
    screen with a "Set up this restaurant" form instead of the login fields.
 3. **Set up.** Restaurant name, GSTIN (optional), your name, email, a password of eight

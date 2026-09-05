@@ -6,7 +6,7 @@ import { startBox } from "./serve.ts";
 
 test("box boots on an empty folder, sets up a restaurant, owner signs in", async () => {
   const dataDir = mkdtempSync(join(tmpdir(), "odr-box-"));
-  const box = await startBox({ dataDir, port: 0, assets: {} });
+  let box = await startBox({ dataDir, port: 0, assets: {} });
   try {
     const cfg = await (await fetch(`${box.url}/config.json`)).json();
     expect(cfg).toEqual({ dinerOrigin: "", offline: true });
@@ -23,7 +23,7 @@ test("box boots on an empty folder, sets up a restaurant, owner signs in", async
     const created = await fetch(`${box.url}/setup`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "Box Cafe", ownerEmail: "o@box.test", ownerPassword: "password1", ownerFullName: "Owner", setupCode: box.setupCode }),
+      body: JSON.stringify({ name: "Box Cafe", ownerEmail: "o@box.test", ownerPassword: "password1", ownerFullName: "Owner", setupCode: box.setupCode! }),
     });
     expect(created.status).toBe(201);
 
@@ -37,6 +37,13 @@ test("box boots on an empty folder, sets up a restaurant, owner signs in", async
 
     const outlets = await fetch(`${box.url}/api/v1/outlets`, { headers: { authorization: `Bearer ${token}` } });
     expect(((await outlets.json()) as { outlets: unknown[] }).outlets).toHaveLength(1);
+    expect(box.setupCode).toMatch(/^\d{6}$/);
+
+    // A restart after setup prints no code: the first-run route is closed for good.
+    await box.stop();
+    box = await startBox({ dataDir, port: 0, assets: {} });
+    expect(box.setupCode).toBeNull();
+    expect(await (await fetch(`${box.url}/setup`)).json()).toEqual({ needed: false });
   } finally {
     await box.stop();
     rmSync(dataDir, { recursive: true, force: true });

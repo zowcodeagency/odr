@@ -72,7 +72,8 @@ export const startBox = async (opts: { dataDir: string; port: number; assets: Re
 
     return {
       url: `http://localhost:${server.port}`,
-      setupCode,
+      // null once the restaurant exists — the code is only for the first run.
+      setupCode: ((await (await app.request("/setup")).json()) as { needed: boolean }).needed ? setupCode : null,
       stop: async () => {
         await server.stop(true);
         await pg.close();
