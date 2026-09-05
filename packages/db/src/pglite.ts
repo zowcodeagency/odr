@@ -15,8 +15,8 @@ import pgliteData from "../node_modules/@electric-sql/pglite/dist/pglite.data" w
 import * as schema from "./schema/index.ts";
 import type { DB } from "./index.ts";
 
-/** Migrations ship next to this file in the repo; the compiled Box embeds them (see dev/build-box.ts). */
-export const MIGRATIONS = process.env.ODR_MIGRATIONS ?? join(import.meta.dir, "../drizzle");
+/** Task 7's build unpacks embedded migrations and points ODR_MIGRATIONS at them before opening. */
+const migrationsFolder = () => process.env.ODR_MIGRATIONS ?? join(import.meta.dir, "../drizzle");
 
 export const openPglite = async (folder: string): Promise<{ db: DB; close: () => Promise<void> }> => {
   const client = new PGlite(folder, {
@@ -25,6 +25,6 @@ export const openPglite = async (folder: string): Promise<{ db: DB; close: () =>
     fsBundle: new Blob([await Bun.file(pgliteData).arrayBuffer()]),
   });
   const db = drizzle({ client, schema }) as unknown as DB;
-  await migrate(db as never, { migrationsFolder: MIGRATIONS });
+  await migrate(db as never, { migrationsFolder: migrationsFolder() });
   return { db, close: () => client.close() };
 };

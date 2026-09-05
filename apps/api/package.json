@@ -2,6 +2,9 @@
   "name": "@odr/api",
   "private": true,
   "type": "module",
+  "exports": {
+    "./app": "./src/app.ts"
+  },
   "scripts": {
     "dev": "bun --hot ./src/server.ts",
     "start": "bun ./src/server.ts"

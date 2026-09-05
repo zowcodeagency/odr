@@ -1,0 +1,12 @@
+{
+  "name": "@odr/box",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "ODR_DATA=./.data bun --hot ./src/main.ts"
+  },
+  "dependencies": {
+    "@odr/api": "workspace:*",
+    "@odr/db": "workspace:*"
+  }
+}

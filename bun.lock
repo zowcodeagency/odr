@@ -43,6 +43,13 @@
         "zod": "^3.23.8",
       },
     },
+    "apps/box": {
+      "name": "@odr/box",
+      "dependencies": {
+        "@odr/api": "workspace:*",
+        "@odr/db": "workspace:*",
+      },
+    },
     "apps/captain-pwa": {
       "name": "@odr/captain-pwa",
       "dependencies": {
@@ -255,6 +262,8 @@
     "@odr/api": ["@odr/api@workspace:apps/api"],
 
     "@odr/auth": ["@odr/auth@workspace:packages/auth"],
+
+    "@odr/box": ["@odr/box@workspace:apps/box"],
 
     "@odr/captain-pwa": ["@odr/captain-pwa@workspace:apps/captain-pwa"],
 
