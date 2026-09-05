@@ -307,6 +307,14 @@ export const api = {
   login: (email: string, password: string, tenantId?: string) =>
     send<LoginResult>("POST", "/auth/login", { email, password, ...(tenantId ? { tenantId } : {}) }),
 
+  /** Box only. The cloud has no /setup and 404s → { needed: false }. */
+  setupStatus: () =>
+    get<{ needed: boolean }>("/setup").catch((e: unknown) =>
+      e instanceof ApiError && e.status === 404 ? { needed: false } : Promise.reject(e),
+    ),
+  setup: (input: { name: string; ownerEmail: string; ownerPassword: string; ownerFullName: string; gstin?: string }) =>
+    send<{ tenantId: string; outletId: string }>("POST", "/setup", input),
+
   me: () =>
     get<{
       userId: string;
