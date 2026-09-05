@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { assets } from "./assets.gen.ts";
+import { assets, migrations } from "./assets.gen.ts";
 import { startBox } from "./serve.ts";
 
 // Data folder the owner can find: ~/Odr (Windows: C:\Users\<name>\Odr). ODR_DATA overrides.
@@ -12,7 +12,7 @@ if (!Number.isInteger(port) || port < 0 || port > 65535) {
 }
 
 try {
-  const box = await startBox({ dataDir, port, assets });
+  const box = await startBox({ dataDir, port, assets, migrations });
   console.log(`Odr Box · data in ${dataDir} · open ${box.url} on any phone on this wifi`);
 } catch (e) {
   console.error(`Odr Box could not start: ${e instanceof Error ? e.message : String(e)}`);
