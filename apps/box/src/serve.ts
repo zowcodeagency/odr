@@ -16,8 +16,12 @@ export const startBox = async (opts: { dataDir: string; port: number; assets: Re
   // A per-install JWT secret, generated once. auth/tokens reads process.env at import,
   // so this must be set before the API module loads (hence the dynamic import below).
   const secretFile = join(opts.dataDir, "secret");
-  if (!existsSync(secretFile)) writeFileSync(secretFile, crypto.randomUUID() + crypto.randomUUID(), { mode: 0o600 });
-  process.env.JWT_SECRET ??= readFileSync(secretFile, "utf8").trim();
+  let secret = existsSync(secretFile) ? readFileSync(secretFile, "utf8").trim() : "";
+  if (!secret) {
+    secret = crypto.randomUUID() + crypto.randomUUID();
+    writeFileSync(secretFile, secret, { mode: 0o600 });
+  }
+  process.env.JWT_SECRET ||= secret;
 
   // Compiled binary: unpack the embedded migration files so drizzle's folder-based
   // migrator can read them (the repo's packages/db/drizzle folder doesn't exist inside one).

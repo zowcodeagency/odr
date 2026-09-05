@@ -11,9 +11,11 @@ if (!Number.isInteger(port) || port < 0 || port > 65535) {
   process.exit(1);
 }
 
+let box: Awaited<ReturnType<typeof startBox>> | undefined;
 try {
-  const box = await startBox({ dataDir, port, assets, migrations });
+  box = await startBox({ dataDir, port, assets, migrations });
   console.log(`Odr Box · data in ${dataDir} · open ${box.url} on any phone on this wifi`);
+  for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => void box!.stop().then(() => process.exit(0)));
 } catch (e) {
   console.error(`Odr Box could not start: ${e instanceof Error ? e.message : String(e)}`);
   console.error(`Check that the folder ${dataDir} is writable and that port ${port} is free (set ODR_PORT to change it).`);

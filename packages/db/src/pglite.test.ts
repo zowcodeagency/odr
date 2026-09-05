@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openPglite } from "./pglite.ts";
@@ -20,5 +20,32 @@ test("openPglite migrates an empty folder and persists across reopen", async () 
     await second.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("openPglite closes the client when migration fails, releasing the folder for a retry", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "odr-pglite-fail-"));
+  const migDir = mkdtempSync(join(tmpdir(), "odr-pglite-mig-"));
+  const prevMigrations = process.env.ODR_MIGRATIONS;
+  try {
+    mkdirSync(join(migDir, "meta"), { recursive: true });
+    const journal = readFileSync(join(import.meta.dir, "../drizzle/meta/_journal.json"), "utf8");
+    writeFileSync(join(migDir, "meta/_journal.json"), journal);
+    const firstTag = (JSON.parse(journal) as { entries: { tag: string }[] }).entries[0]!.tag;
+    writeFileSync(join(migDir, `${firstTag}.sql`), "THIS IS NOT SQL;");
+
+    process.env.ODR_MIGRATIONS = migDir;
+    await expect(openPglite(dir)).rejects.toBeDefined();
+
+    // Same folder, migrations fixed by pointing back at the real ones: if the
+    // failed attempt above left PGlite's lock held, this second open hangs/rejects.
+    delete process.env.ODR_MIGRATIONS;
+    const second = await openPglite(dir);
+    await second.close();
+  } finally {
+    if (prevMigrations === undefined) delete process.env.ODR_MIGRATIONS;
+    else process.env.ODR_MIGRATIONS = prevMigrations;
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(migDir, { recursive: true, force: true });
   }
 });

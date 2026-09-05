@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startBox } from "./serve.ts";
@@ -52,6 +52,20 @@ test("a failed boot releases the database for the next attempt", async () => {
     const third = await startBox({ dataDir, port: 0, assets: {} });
     await third.stop();
   } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+}, 30_000);
+
+test("an empty secret file is never left empty", async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), "odr-box-"));
+  mkdirSync(dataDir, { recursive: true });
+  writeFileSync(join(dataDir, "secret"), "");
+  const box = await startBox({ dataDir, port: 0, assets: {} });
+  try {
+    const secret = readFileSync(join(dataDir, "secret"), "utf8").trim();
+    expect(secret.length).toBeGreaterThanOrEqual(32);
+  } finally {
+    await box.stop();
     rmSync(dataDir, { recursive: true, force: true });
   }
 }, 30_000);

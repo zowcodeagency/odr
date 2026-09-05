@@ -25,6 +25,11 @@ export const openPglite = async (folder: string): Promise<{ db: DB; close: () =>
     fsBundle: new Blob([await Bun.file(pgliteData).arrayBuffer()]),
   });
   const db = drizzle({ client, schema }) as unknown as DB;
-  await migrate(db as never, { migrationsFolder: migrationsFolder() });
+  try {
+    await migrate(db as never, { migrationsFolder: migrationsFolder() });
+  } catch (e) {
+    await client.close().catch(() => undefined);
+    throw e;
+  }
   return { db, close: () => client.close() };
 };

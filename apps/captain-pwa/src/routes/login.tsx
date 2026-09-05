@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { Button, Input, ThemeToggle } from "@odr/ui";
 import { api, needsTenant, type Outlet } from "../lib/api.ts";
+import { config } from "../lib/config.ts";
 import { navigate } from "../lib/router.ts";
 import {
   addressLine,
@@ -68,6 +69,7 @@ export const LoginRoute = () => {
   const [error, setError] = useState<string | null>(null);
   const [setupNeeded, setSetupNeeded] = useState(false);
   useEffect(() => {
+    if (!config().offline) return;
     void api.setupStatus().then((s) => setSetupNeeded(s.needed)).catch(() => undefined);
   }, []);
 

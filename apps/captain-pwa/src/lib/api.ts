@@ -307,7 +307,9 @@ export const api = {
   login: (email: string, password: string, tenantId?: string) =>
     send<LoginResult>("POST", "/auth/login", { email, password, ...(tenantId ? { tenantId } : {}) }),
 
-  /** Box only. The cloud has no /setup and 404s → { needed: false }. */
+  /** Only called when config().offline is true — the cloud serves index.html (200) for
+   *  /setup, not a 404, so login.tsx never calls this there. The 404 fallback stays
+   *  as a second line of defense. */
   setupStatus: () =>
     get<{ needed: boolean }>("/setup").catch((e: unknown) =>
       e instanceof ApiError && e.status === 404 ? { needed: false } : Promise.reject(e),
