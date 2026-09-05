@@ -70,7 +70,7 @@ earlier `ODR_DB=pglite:` URL idea was dropped — this keeps WASM out of the sha
 migrations to `<data>/migrations`, opens PGlite at `<data>/db`, generates a per-install JWT
 secret at `<data>/secret` (mode 0600), starts the API on one port and serves the built staff
 app from embedded assets with SPA fallback. Config is by environment: `ODR_DATA` (default
-`~/Odr`) and `ODR_PORT` (default 3000); an update channel setting arrives with the updater.
+`~/Odr`) and `ODR_PORT` (default 7777); an update channel setting arrives with the updater.
 `/config.json` returns `{ "dinerOrigin": "", "offline": true }` and the built page inlines the
 same, so the app hides QR ordering and the branding font picker offline. On start the Box
 prints a six-digit setup code; the first-run route requires it (five wrong codes lock it
@@ -134,7 +134,7 @@ finished until the first backup exists.
 Windows: installer copies the exe, registers a Task Scheduler start-on-logon task, adds
 the firewall rule, disables sleep, sets Windows Update active hours; `--windows-hide-console`.
 Linux: systemd service with restart-on-failure. macOS: launch agent, signed build.
-Phones open `http://<box-ip>:3000`; we print a card with the address and a QR of it.
+Phones open `http://<box-ip>:7777`; we print a card with the address and a QR of it.
 
 ### 9. Moving data
 Same schema everywhere, UUID ids, so data moves as rows without renumbering.

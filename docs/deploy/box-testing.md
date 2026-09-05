@@ -33,9 +33,10 @@ until the installer work; closing that window stops the Box.
 
 Whatever the machine, the walk-through is identical once the Box is running.
 
-1. **Read the two console lines.** One gives the address, the other the six-digit
-   first-time setup code. Write the code down; it changes on every restart until setup
-   is done.
+1. **Read the console.** It prints the data folder, the address for this computer
+   (`http://localhost:7777`), the address a phone must type (`http://<wifi ip>:7777`),
+   and the six-digit first-time setup code. Write the code down; it changes on every
+   restart until setup is done.
 2. **Open the address in a browser on the same machine.** You should see the Odr sign-in
    screen with a "Set up this restaurant" form instead of the login fields.
 3. **Set up.** Restaurant name, GSTIN (optional), your name, email, a password of eight
@@ -49,8 +50,8 @@ Whatever the machine, the walk-through is identical once the Box is running.
 7. **Check the offline hiding.** More has no "Print QR sheet" row. Settings has no
    "Table QR codes" section. Branding has no font picker. Typing `#/qr` in the address
    bar lands on Tables.
-8. **From a phone.** Find the machine's wifi IP address (below, per platform). On the
-   phone open `http://<ip>:3000`. Sign in, open a table, fire a KOT. The Kitchen tab on
+8. **From a phone.** Open the "On a phone on this wifi" address printed in the console,
+   for example `http://192.168.1.23:7777`. Never `localhost` — that is the phone itself. Sign in, open a table, fire a KOT. The Kitchen tab on
    the computer shows it within five seconds.
 9. **Restart.** Stop the Box (Ctrl+C in the console, or close the window on Windows)
    and start it again. Sign in. Tables, the order and the bill are all still there, and
@@ -65,7 +66,7 @@ If any step fails, jump to "When something goes wrong" at the end.
 ## macOS (developer machine)
 
 ```bash
-ODR_DATA=/tmp/odr-test ODR_PORT=3000 ./apps/box/dist/odr-box-host
+ODR_DATA=/tmp/odr-test ODR_PORT=7777 ./apps/box/dist/odr-box-host
 ```
 
 - `ODR_DATA` keeps the test data out of your real `~/Odr`. Delete the folder to reset.
@@ -112,7 +113,7 @@ ODR_DATA=$HOME/Odr ./odr-box-bun-linux-x64
 ```
 
 - Wifi IP: `hostname -I`.
-- Firewall: on Ubuntu, `sudo ufw allow 3000/tcp` if ufw is active.
+- Firewall: on Ubuntu, `sudo ufw allow 7777/tcp` if ufw is active.
 - To keep it running after you log out, for the test only:
   `nohup ./odr-box-bun-linux-x64 > odr.log 2>&1 &`. The setup code is then in
   `odr.log`. The installer plan replaces this with a systemd service.
@@ -149,7 +150,7 @@ yes/no per step 1 to 10 with the exact message for any failure. Add the outcome 
 ## When something goes wrong
 
 **The console says "Odr Box could not start".** The next line says why. Either the data
-folder is not writable (choose another with `ODR_DATA`) or port 3000 is taken (choose
+folder is not writable (choose another with `ODR_DATA`) or port 7777 is taken (choose
 another with `ODR_PORT`, and use it in the address).
 
 **Wrong setup code five times.** Setup locks until the Box restarts. Restart it; a new
