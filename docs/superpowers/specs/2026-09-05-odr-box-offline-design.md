@@ -155,9 +155,14 @@ Diner QR ordering, multi-outlet across sites, cloud sync of any kind, Android-on
 PC) install. Each is a separate decision later.
 
 ## Risks
-- PGlite inside a compiled Bun binary (WASM in a single file), on Windows and Linux ARM64.
-  Spike first, one day. Fallback: bundle Postgres binaries (`embedded-postgres`, ~40 MB), no
-  code change. SQLite dialect rewrite is the last resort and is avoided.
+- PGlite in compiled Bun: VERIFIED 2026-09-05 on macOS (arm64) — all 12 migrations
+  applied (~830-870ms), round-trip ok. Plain `new PGlite(dir)` fails inside `bun build
+  --compile` (ENOENT reading pglite.data/pglite.wasm from bunfs); needs the embed variant
+  — `pgliteWasmModule` + `initdbWasmModule` + `fsBundle`, built from `pglite.wasm`,
+  `initdb.wasm`, and `pglite.data` imported with `{ type: "file" }` (PGlite 0.5.8 renamed
+  the older `wasmModule` option and added a separate initdb wasm module; Task 2 must use
+  these three, not the two-option shape). Compiled host binary: 77 MB. Windows x64 (135 MB)
+  and Linux arm64 (119 MB) built via `--target=`; not run — no matching hardware at hand.
 - Physical: PC asleep, router off, phones on the wrong wifi. Handled at install.
 - Code visibility: the binary contains minified JS and can be extracted by a skilled
   person. Protection is the signed license and the contract, as with all offline software.
