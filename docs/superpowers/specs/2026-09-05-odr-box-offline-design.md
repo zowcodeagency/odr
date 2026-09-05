@@ -58,15 +58,23 @@ darwin-arm64, linux-x64, linux-arm64.
 ## Components
 
 ### 1. Database entry
-`ODR_DB=pglite:<folder>` selects PGlite in `packages/db/src/index.ts`; anything else keeps
-postgres.js. Migrations run from the same `packages/db/drizzle` folder on every start,
-before the API listens. One process, one writer.
+`packages/db/src/pglite.ts` exports `openPglite(folder)`: opens PGlite on the folder
+(WASM embedded in the binary), runs the migration folder, returns `{ db, close }`.
+`packages/db/src/index.ts` exports `setDb(db)` so the Box installs that database for the
+whole API; the cloud keeps postgres.js and never imports the PGlite file. Migrations run on
+every start, before the API listens. One process, one writer. (Shipped 2026-09-05; the
+earlier `ODR_DB=pglite:` URL idea was dropped — this keeps WASM out of the shared module.)
 
 ### 2. Box entry point
-`apps/box/src/main.ts`: runs migrations, starts Hono on one port, serves the built staff
-app from embedded assets with SPA fallback, proxies nothing (same origin). Config lives in
-`<data>/config.json`: port, data folder, update channel. `config.json` served to the app
-has `dinerOrigin: ""` and `offline: true`; the app hides the QR section when offline.
+`apps/box/src/main.ts` → `startBox()` in `apps/box/src/serve.ts`: unpacks the embedded
+migrations to `<data>/migrations`, opens PGlite at `<data>/db`, generates a per-install JWT
+secret at `<data>/secret` (mode 0600), starts the API on one port and serves the built staff
+app from embedded assets with SPA fallback. Config is by environment: `ODR_DATA` (default
+`~/Odr`) and `ODR_PORT` (default 3000); an update channel setting arrives with the updater.
+`/config.json` returns `{ "dinerOrigin": "", "offline": true }` and the built page inlines the
+same, so the app hides QR ordering and the branding font picker offline. On start the Box
+prints a six-digit setup code; the first-run route requires it (five wrong codes lock it
+until restart), so a wifi guest cannot claim a fresh install before the owner does.
 
 ### 3. First-run setup
 When no tenant exists the app shows a setup page: restaurant name, GSTIN, owner name,
