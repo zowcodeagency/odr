@@ -2,7 +2,7 @@ import { interpolate, useCurrentFrame } from "remotion";
 import { C, MONO } from "../theme.ts";
 import { Scene } from "../ui/Layout.tsx";
 import { Card, TopBar } from "../ui/Phone.tsx";
-import { rise, useEnter } from "../ui/motion.ts";
+import { at, rise, useEnter } from "../ui/motion.ts";
 
 type Status = "free" | "open" | "firing" | "settled";
 const TILES: [string, Status, string][] = [
@@ -40,7 +40,7 @@ const Stat = ({ k, v, i }: { k: string; v: string; i: number }) => {
 
 export const Floor = ({ durationInFrames }: { durationInFrames: number }) => {
   const frame = useCurrentFrame();
-  const tap = interpolate(frame, [110, 122, 150], [0, 1, 0.6], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const tap = interpolate(frame, [at(durationInFrames, 0.45), at(durationInFrames, 0.5), at(durationInFrames, 0.62)], [0, 1, 0.6], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <Scene
       durationInFrames={durationInFrames}

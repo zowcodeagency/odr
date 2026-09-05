@@ -2,7 +2,7 @@ import { interpolate, useCurrentFrame } from "remotion";
 import { C, MONO } from "../theme.ts";
 import { Scene } from "../ui/Layout.tsx";
 import { Card, TopBar } from "../ui/Phone.tsx";
-import { inr, rise, useCount, useEnter } from "../ui/motion.ts";
+import { at, inr, rise, useCount, useEnter } from "../ui/motion.ts";
 
 const PILLS = ["Today", "This week", "This month", "Pick dates"];
 // Today → This month, then the numbers grow to the month's figures.
@@ -35,12 +35,14 @@ const Row = ({ label, note, amount, share, delay }: { label: string; note: strin
 
 export const Sales = ({ durationInFrames }: { durationInFrames: number }) => {
   const frame = useCurrentFrame();
-  const pill = frame < 70 ? 0 : frame < 120 ? 1 : 2;
-  const grow = frame >= 120;
-  const sales = useCount(TARGET.sales, 120, 175);
-  const tax = useCount(TARGET.tax, 120, 175);
-  const bills = useCount(TARGET.bills, 120, 175);
-  const csv = interpolate(frame, [300, 308, 320], [0, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const f = (x: number) => at(durationInFrames, x);
+  // "Today, this month…" → pills move; "…any days you choose" → the month's numbers grow in.
+  const pill = frame < f(0.22) ? 0 : frame < f(0.38) ? 1 : 2;
+  const grow = frame >= f(0.38);
+  const sales = useCount(TARGET.sales, f(0.38), f(0.58));
+  const tax = useCount(TARGET.tax, f(0.38), f(0.58));
+  const bills = useCount(TARGET.bills, f(0.38), f(0.58));
+  const csv = interpolate(frame, [f(0.84), f(0.87), f(0.92)], [0, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const v = grow ? { sales, tax, bills } : TODAY;
   const avg = v.bills ? Math.round(v.sales / v.bills) : 0;
   const vs = pill === 2 ? "last month" : pill === 1 ? "last week" : "yesterday";

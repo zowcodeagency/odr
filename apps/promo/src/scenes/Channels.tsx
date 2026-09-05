@@ -4,7 +4,7 @@ import { Scene } from "../ui/Layout.tsx";
 import { Card, GreenButton, TopBar } from "../ui/Phone.tsx";
 import { Qr } from "../ui/Qr.tsx";
 import { Logo } from "../ui/Logo.tsx";
-import { rise, useEnter } from "../ui/motion.ts";
+import { at, rise, useEnter } from "../ui/motion.ts";
 
 const CHANNELS = ["Dine-in", "Parcel", "Zomato", "Swiggy", "QR"];
 
@@ -23,10 +23,11 @@ const QrCard = () => {
 export const Channels = ({ durationInFrames }: { durationInFrames: number }) => {
   const frame = useCurrentFrame();
   // The highlight walks along the channel pills, then rests on Parcel.
-  const idx = Math.min(4, Math.floor(interpolate(frame, [30, 130], [0, 5], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })));
-  const active = frame > 150 ? 1 : idx;
-  const btn = interpolate(frame, [170, 178, 190], [0, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const tiles = useEnter(200, 16);
+  const f = (x: number) => at(durationInFrames, x);
+  const idx = Math.min(4, Math.floor(interpolate(frame, [f(0.08), f(0.4)], [0, 5], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })));
+  const active = frame > f(0.46) ? 1 : idx;
+  const btn = interpolate(frame, [f(0.52), f(0.55), f(0.6)], [0, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const tiles = useEnter(f(0.62), 16);
   return (
     <Scene
       durationInFrames={durationInFrames}

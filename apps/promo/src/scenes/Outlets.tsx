@@ -2,7 +2,7 @@ import { interpolate, interpolateColors, useCurrentFrame } from "remotion";
 import { C, MONO } from "../theme.ts";
 import { Scene } from "../ui/Layout.tsx";
 import { Card, GreenButton } from "../ui/Phone.tsx";
-import { rise, useEnter } from "../ui/motion.ts";
+import { at, rise, useEnter } from "../ui/motion.ts";
 
 const OUTLETS: [string, string, string][] = [["Cafe Sagar", "Balmatta Road", "₹48,632"], ["Sagar Express", "Kadri", "₹31,910"], ["Sagar Kitchen", "Surathkal", "₹22,405"]];
 const BRAND2 = "#B5432B"; // the owner's own colour after the switch
@@ -23,10 +23,12 @@ const OutletRow = ({ name, where, sales, i, on, accent }: { name: string; where:
 
 export const Outlets = ({ durationInFrames }: { durationInFrames: number }) => {
   const frame = useCurrentFrame();
-  const sel = frame < 70 ? 0 : frame < 120 ? 1 : 2;
-  const rebrand = interpolate(frame, [170, 200], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const f = (x: number) => at(durationInFrames, x);
+  // "Switch in a tap" → the selection moves; "Your logo, your colours" → the app rebrands.
+  const sel = frame < f(0.25) ? 0 : frame < f(0.42) ? 1 : 2;
+  const rebrand = interpolate(frame, [f(0.6), f(0.72)], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const accent = interpolateColors(rebrand, [0, 1], [C.accent, BRAND2]);
-  const logoIn = useEnter(180, 14);
+  const logoIn = useEnter(f(0.64), 14);
   return (
     <Scene
       durationInFrames={durationInFrames}

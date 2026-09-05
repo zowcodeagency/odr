@@ -29,5 +29,8 @@ export const useSceneFade = (durationInFrames: number, edge = 10) => {
   });
 };
 
+/** Frame at a fraction of the scene — beats stay in place when the voice retimes the cut. */
+export const at = (durationInFrames: number, fraction: number) => Math.round(durationInFrames * fraction);
+
 export const inr = (minor: number) =>
   "₹" + (minor / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

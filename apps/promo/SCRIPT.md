@@ -1,12 +1,25 @@
 # Odr promo — voiceover script
 
-80 seconds, 8 scenes. Record one continuous take at a calm, confident pace
-(about 140 words a minute) and hit each line at the time shown, or record
-per-line clips and I will place them. Save the final file as
-`apps/promo/public/voiceover.mp3` — it is picked up automatically on render.
+Current voiceover: `public/voiceover.mp3` — the ElevenLabs "Indian" take
+(`public/voice/voice1-indian.mp3`), loudness-normalised to -16 LUFS. The cut
+follows it: paragraph start times were measured with whisper and live in
+`src/theme.ts` (`VOICE_STARTS`). The video runs 70 seconds.
+
+Re-recording? Drop the new file in as `public/voiceover.mp3`, then re-measure:
+
+```
+python3 -m venv out/asr/venv && out/asr/venv/bin/pip install mlx-whisper
+out/asr/venv/bin/mlx_whisper public/voiceover.mp3 --model mlx-community/whisper-small-mlx \
+  --word-timestamps True --output-format json --output-dir out/asr --language en
+```
+
+Read the start time of the first word of each paragraph from the JSON and
+update `VOICE_STARTS` and `VOICE_END`. Every scene's beats are fractions of
+its length, so nothing else needs touching.
+
 Optional background music goes in `public/music.mp3` (played at 18%).
 
-| Time | Scene | Line |
+| Time (voice) | Scene | Line |
 |---|---|---|
 | 0:00 – 0:06 | Logo | Meet Odr. The restaurant system that runs on the phone already in your pocket. |
 | 0:06 – 0:15 | The floor | Your floor, live. Every table, every order, one tap away — on a phone, a tablet, or a browser tab on the counter computer. |

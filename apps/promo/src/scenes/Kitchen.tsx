@@ -2,20 +2,19 @@ import { interpolate, useCurrentFrame } from "remotion";
 import { C, MONO } from "../theme.ts";
 import { Scene } from "../ui/Layout.tsx";
 import { Card, GreenButton, TopBar } from "../ui/Phone.tsx";
-import { rise, useEnter } from "../ui/motion.ts";
+import { at, rise, useEnter } from "../ui/motion.ts";
 
 const ITEMS: [string, number, string][] = [["Masala Dosa", 2, "₹240.00"], ["Filter Coffee", 2, "₹80.00"], ["Veg Pulao", 1, "₹180.00"]];
-const SWITCH = 165; // frame where the order screen gives way to the kitchen screen
 
-const OrderScreen = () => {
+const OrderScreen = ({ switchAt }: { switchAt: number }) => {
   const frame = useCurrentFrame();
-  const pressed = interpolate(frame, [125, 133, 150], [0, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const pressed = interpolate(frame, [switchAt - 40, switchAt - 32, switchAt - 15], [0, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <>
       <TopBar title="Table 4" />
       <div style={{ padding: "0 16px", fontSize: 12, color: C.fg3 }}>Dine-in · 2 guests · opened just now</div>
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-        {ITEMS.map(([name, qty, price], i) => <Line key={name} name={name} qty={qty} price={price} delay={20 + i * 28} />)}
+        {ITEMS.map(([name, qty, price], i) => <Line key={name} name={name} qty={qty} price={price} delay={Math.round(switchAt * (0.12 + i * 0.2))} />)}
       </div>
       <div style={{ position: "absolute", left: 16, right: 16, bottom: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.fg3, marginBottom: 10 }}>
@@ -43,10 +42,10 @@ const Line = ({ name, qty, price, delay }: { name: string; qty: number; price: s
   );
 };
 
-const KitchenScreen = () => {
-  const frame = useCurrentFrame() - SWITCH;
-  const p = useEnter(SWITCH + 4, 16);
-  const bump = interpolate(frame, [120, 130], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+const KitchenScreen = ({ switchAt, end }: { switchAt: number; end: number }) => {
+  const frame = useCurrentFrame();
+  const p = useEnter(switchAt + 4, 16);
+  const bump = interpolate(frame, [end - 40, end - 30], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <>
       <TopBar title="Kitchen" />
@@ -86,13 +85,15 @@ const KitchenScreen = () => {
 
 export const Kitchen = ({ durationInFrames }: { durationInFrames: number }) => {
   const frame = useCurrentFrame();
+  // "Take the order and fire it." → order screen; "The kitchen sees it…" → kitchen screen.
+  const switchAt = at(durationInFrames, 0.42);
   return (
     <Scene
       durationInFrames={durationInFrames}
       kicker="Order to kitchen"
       title="Take the order. Fire it. The kitchen sees it instantly."
       points={["Kitchen screen or thermal printer, your choice", "Tickets turn amber as they wait", "Opened a table by mistake? Void it in a tap"]}
-      screen={frame < SWITCH ? <OrderScreen /> : <KitchenScreen />}
+      screen={frame < switchAt ? <OrderScreen switchAt={switchAt} /> : <KitchenScreen switchAt={switchAt} end={durationInFrames} />}
     />
   );
 };

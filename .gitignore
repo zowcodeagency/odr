@@ -19,3 +19,4 @@ apps/box/.data/
 
 # remotion renders
 apps/promo/out
+apps/promo/public/voice/
