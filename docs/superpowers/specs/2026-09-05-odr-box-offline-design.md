@@ -1,6 +1,6 @@
 # Odr Box — the fully offline install
 
-Date: 2026-09-05. Status: design, awaiting Ahmed's review.
+Date: 2026-09-05. Status: approved by Ahmed 2026-09-05; implementation on branch `box`.
 
 ## Why
 
@@ -46,6 +46,10 @@ Verified facts this rests on (checked 2026-09-05 against the repo):
 
 Single-counter use (one person, one PC) is the same build used in a browser on the Box
 itself. Not a separate product.
+
+Hidden on the Box behind the one `offline` flag: diner QR ordering (needs the internet) and
+"bills on the device" (the server is already in the building; phone-only bills would sit
+outside every backup).
 
 Hardware: the customer's Windows PC or laptop, or a Linux mini PC / Raspberry Pi 5 we
 supply pre-installed. Targets built from one command: windows-x64, darwin-x64,
@@ -119,6 +123,25 @@ Windows: installer copies the exe, registers a Task Scheduler start-on-logon tas
 the firewall rule, disables sleep, sets Windows Update active hours; `--windows-hide-console`.
 Linux: systemd service with restart-on-failure. macOS: launch agent, signed build.
 Phones open `http://<box-ip>:3000`; we print a card with the address and a QR of it.
+
+### 9. Moving data
+Same schema everywhere, UUID ids, so data moves as rows without renumbering.
+- Box → new Box: "Export backup" on the old machine; the setup page on the new one offers
+  "Restore from backup" before "New restaurant". Same license key.
+- Cloud → Box: `dev/tenant-export.ts` dumps every row for one tenant id across all tables
+  into the same backup format; the Box restores it. Invoice sequences continue.
+- Box → cloud: the reverse import through the admin console (a later, separate step; the
+  format is designed for it now).
+Bills kept on a phone (hold-to-settle) are never part of this; the feature is hidden on
+the Box.
+
+### 10. Development and release control
+- Build on branch `box`; merge to `main` once the spike passes and the pilot runs. After
+  that the Box lives in `main` (`apps/box`, the database entry) next to the cloud code.
+  No long-lived fork.
+- The cloud deploys on every push. A Box release is a deliberate git tag; features already
+  in `main` reach Boxes only when we cut and publish that tag. Features that must never
+  appear on the Box are hidden behind the `offline` flag, not by separate code.
 
 ## Out of scope
 Diner QR ordering, multi-outlet across sites, cloud sync of any kind, Android-only (no
