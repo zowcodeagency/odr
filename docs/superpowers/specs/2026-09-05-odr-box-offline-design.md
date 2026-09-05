@@ -81,17 +81,30 @@ When no tenant exists the app shows a setup page: restaurant name, GSTIN, owner 
 email, password, tables. It calls the existing admin `createRestaurant` service through a
 local-only route that is disabled once a tenant exists. No admin console on site.
 
-### 4. License
-A license is a compact signed token (Ed25519, `jose` is already a dependency): tenant
-name, license id, expiry date, plan, and the **install id** of the one Box it is for. The
-install id is a random id the Box generates on first run and stores in its data folder; the
-About screen shows it and the owner reads it to us when ordering a key. A key whose install
-id does not match is refused, so one key cannot run two Boxes. Public key is baked into the
-build; the private key stays with us in a small CLI (`dev/license.ts`). Entering a key
-writes `subscription_end`.
-Grace: 3 days after expiry billing still works under a full-width banner, then the
-existing expired screen. Renewal banner in the last 7 days (existing). Keys arrive by
-WhatsApp as text or QR; the Settings page has "Enter license key" and a camera scan.
+### 4. License, and the Boxes panel for our team
+**Install id.** The Box generates a random id on first run into `<data>/install-id`. The
+setup screen and Settings → About show it; a sales person reads it off the screen (or the
+owner sends it on WhatsApp) to get a key.
+
+**Key.** A compact signed token (Ed25519 via `jose`, which we already use): install id,
+license id, restaurant name, plan, expiry date. The public key is a constant in
+`@odr/auth`; the private key is a Cloudflare secret (`LICENSE_PRIVATE_KEY`) and is used
+only by the admin API when our team issues a key. A key whose install id does not match is
+refused, so one key cannot run two Boxes. Entering a key (Settings → About, or the
+"subscription ended" screen) verifies it offline and writes the expiry into
+`subscription_end`, plus 3 days of grace so a late renewal never stops a dinner service;
+About shows the real expiry from the stored key. The first run without a key gets 14 days.
+
+**Boxes panel (admin console).** A "Boxes" tab next to "Restaurants": register a Box
+(name, install id, plan, months) → the key appears with Copy and a QR; renew (months) →
+a new key from the later of today and the current expiry; list shows name, install id,
+plan, expiry, status, last version and last seen. Tables `boxes` and `box_licenses` in the
+cloud database. Box customers are not cloud tenants; their restaurant lives only on the Box.
+
+**Check-in (only when a Box happens to be online).** Once on start and daily, the Box posts
+its install id, version and current license id to the cloud. The cloud records last seen
+and version, and answers with a newer key if our team has issued one, which the Box applies
+by itself. Offline Boxes skip this silently; nothing depends on it.
 
 ### 5. Updates
 Settings → About (owner only): version, license id and expiry, data folder, "Check for
