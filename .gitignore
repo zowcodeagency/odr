@@ -16,3 +16,6 @@ apps/box/.data/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Promo video workspace (remotion) — lives outside git; its deps stay in bun.lock so `bun install` is clean
+apps/promo/
