@@ -9,11 +9,13 @@ import { outletsModule } from "./modules/outlets/module.ts";
 import { orderingModule } from "./modules/ordering/module.ts";
 import { billingModule } from "./modules/billing/module.ts";
 import { adminModule } from "./modules/admin/module.ts";
+import { buildSetupRoutes } from "./modules/admin/setup.ts";
+import { drizzleAdminRepo } from "./modules/admin/repo.drizzle.ts";
 import { publicModule } from "./modules/public/module.ts";
 import { printingModule } from "./modules/printing/module.ts";
 import { buildBrandingRoutes } from "./modules/branding/routes.ts";
 
-export const buildApp = async () => {
+export const buildApp = async (opts: { setup?: boolean } = {}) => {
   const app = new Hono();
   const events = new InMemoryEventBus();
 
@@ -26,7 +28,10 @@ export const buildApp = async () => {
   const menu = menuModule({ db, events });
 
   // Internal team surface — ADMIN_KEY bearer auth, no tenant JWT.
-  app.route("/admin", adminModule({ db, menu: menu.service }).routes);
+  const admin = adminModule({ db, menu: menu.service });
+  app.route("/admin", admin.routes);
+  // Box only: first-run restaurant creation, no auth, closes itself after the first tenant.
+  if (opts.setup) app.route("/", buildSetupRoutes(admin.service, drizzleAdminRepo(db)));
 
   const outlets = outletsModule({ db, events });
   const ordering = orderingModule({ db, events, outletActive: outlets.service.activeInTenant });
