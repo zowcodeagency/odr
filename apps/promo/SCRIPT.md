@@ -1,20 +1,23 @@
 # Odr promo — voiceover script
 
-Current voiceover: `public/voiceover.mp3` — the ElevenLabs "Indian" take
-(`public/voice/voice1-indian.mp3`), loudness-normalised to -16 LUFS. The cut
-follows it: paragraph start times were measured with whisper and live in
-`src/theme.ts` (`VOICE_STARTS`). The video runs 70 seconds.
+Two voiced versions ship, each cut to its own take (both loudness-normalised
+to -16 LUFS from the ElevenLabs files in `public/voice/`):
 
-Re-recording? Drop the new file in as `public/voiceover.mp3`, then re-measure:
+- `public/voice-indian.mp3` → compositions `Odr` / `OdrPortrait`, 70 s
+- `public/voice-system.mp3` → compositions `OdrSystem` / `OdrSystemPortrait`, 66 s
+
+Paragraph start times per voice live in `src/theme.ts` (`VOICES`).
+
+Re-recording? Drop the new file in over one of the two, then re-measure:
 
 ```
 python3 -m venv out/asr/venv && out/asr/venv/bin/pip install mlx-whisper
-out/asr/venv/bin/mlx_whisper public/voiceover.mp3 --model mlx-community/whisper-small-mlx \
+out/asr/venv/bin/mlx_whisper public/voice-indian.mp3 --model mlx-community/whisper-small-mlx \
   --word-timestamps True --output-format json --output-dir out/asr --language en
 ```
 
 Read the start time of the first word of each paragraph from the JSON and
-update `VOICE_STARTS` and `VOICE_END`. Every scene's beats are fractions of
+update that voice's `starts` and `end` in `VOICES`. Every scene's beats are fractions of
 its length, so nothing else needs touching.
 
 Optional background music goes in `public/music.mp3` (played at 18%).
@@ -34,7 +37,7 @@ Optional background music goes in `public/music.mp3` (played at 18%).
 
 ```
 cd apps/promo
-bun run render          # out/odr-16x9.mp4 and out/odr-9x16.mp4
+bun run render          # all four: out/odr-{indian,system}-{16x9,9x16}.mp4
 bun run studio          # live preview in the browser
 ```
 

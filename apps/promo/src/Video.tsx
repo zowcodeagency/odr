@@ -1,5 +1,5 @@
 import { AbsoluteFill, Audio, Sequence, getStaticFiles, staticFile } from "remotion";
-import { SCENES, VOICE_LEAD, sec, type SceneId } from "./theme.ts";
+import { VOICES, VOICE_LEAD, scenesFor, sec, type SceneId, type Voice } from "./theme.ts";
 import { Hook } from "./scenes/Hook.tsx";
 import { Floor } from "./scenes/Floor.tsx";
 import { Kitchen } from "./scenes/Kitchen.tsx";
@@ -9,10 +9,10 @@ import { Sales } from "./scenes/Sales.tsx";
 import { Outlets } from "./scenes/Outlets.tsx";
 import { Close } from "./scenes/Close.tsx";
 
-export type VideoProps = { tagline: string; contact: string; email: string };
+export type VideoProps = { voice: Voice; tagline: string; contact: string; email: string };
 
 
-/* Drop `voiceover.mp3` and/or `music.mp3` into public/ — they are picked up automatically. */
+/* Drop `music.mp3` into public/ — it is picked up automatically. */
 const has = (name: string) => getStaticFiles().some((f) => f.name === name);
 
 const SCENE: Record<SceneId, (p: { durationInFrames: number } & VideoProps) => React.ReactElement> = {
@@ -21,7 +21,7 @@ const SCENE: Record<SceneId, (p: { durationInFrames: number } & VideoProps) => R
 
 export const Video = (props: VideoProps) => (
   <AbsoluteFill>
-    {SCENES.map(({ id, from, to }) => {
+    {scenesFor(props.voice).map(({ id, from, to }) => {
       const Comp = SCENE[id];
       const durationInFrames = sec(to) - sec(from);
       return (
@@ -30,9 +30,7 @@ export const Video = (props: VideoProps) => (
         </Sequence>
       );
     })}
-    {has("voiceover.mp3") ? (
-      <Sequence from={sec(VOICE_LEAD)}><Audio src={staticFile("voiceover.mp3")} /></Sequence>
-    ) : null}
+    <Sequence from={sec(VOICE_LEAD)}><Audio src={staticFile(VOICES[props.voice].file)} /></Sequence>
     {has("music.mp3") ? <Audio src={staticFile("music.mp3")} volume={0.18} /> : null}
   </AbsoluteFill>
 );

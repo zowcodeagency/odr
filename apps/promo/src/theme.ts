@@ -33,20 +33,26 @@ export const FPS = 30;
 export const sec = (s: number) => Math.round(s * FPS);
 
 /*
- * The cut follows the voice. Paragraph start times were measured from
- * public/voiceover.mp3 with whisper word timestamps (out/asr). Re-measure and
- * update VOICE_STARTS if the voiceover is re-recorded.
+ * The cut follows the voice. Paragraph start times were measured from the
+ * voice files with whisper word timestamps (out/asr). Re-measure and update
+ * `starts` if a take is re-recorded.
  */
+export type Voice = "indian" | "system";
+export const VOICES: Record<Voice, { file: string; starts: number[]; end: number }> = {
+  indian: { file: "voice-indian.mp3", starts: [0, 4.9, 12.54, 18.72, 29.06, 39.08, 48.62, 56.56], end: 65.6 },
+  system: { file: "voice-system.mp3", starts: [0, 5.56, 14.44, 19.98, 29.54, 37.38, 46.22, 52.86], end: 61.94 },
+};
 export const VOICE_LEAD = 0.8; // silence before the first word
-const VOICE_STARTS = [0, 4.9, 12.54, 18.72, 29.06, 39.08, 48.62, 56.56];
-const VOICE_END = 65.6;
 const CUT_AHEAD = 0.3; // the picture changes a beat before the line
 const HOLD = 3.6; // the close card stays after the last word
 const IDS = ["hook", "floor", "kitchen", "bill", "channels", "sales", "outlets", "close"] as const;
 export type SceneId = (typeof IDS)[number];
-export const SCENES = IDS.map((id, i) => ({
-  id,
-  from: i === 0 ? 0 : VOICE_LEAD + VOICE_STARTS[i]! - CUT_AHEAD,
-  to: i === IDS.length - 1 ? VOICE_LEAD + VOICE_END + HOLD : VOICE_LEAD + VOICE_STARTS[i + 1]! - CUT_AHEAD,
-}));
-export const TOTAL_FRAMES = sec(SCENES[SCENES.length - 1]!.to);
+export const scenesFor = (voice: Voice) => {
+  const { starts, end } = VOICES[voice];
+  return IDS.map((id, i) => ({
+    id,
+    from: i === 0 ? 0 : VOICE_LEAD + starts[i]! - CUT_AHEAD,
+    to: i === IDS.length - 1 ? VOICE_LEAD + end + HOLD : VOICE_LEAD + starts[i + 1]! - CUT_AHEAD,
+  }));
+};
+export const totalFrames = (voice: Voice) => sec(scenesFor(voice)[IDS.length - 1]!.to);

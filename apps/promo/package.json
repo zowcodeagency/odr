@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "studio": "bunx remotion studio src/index.ts",
-    "render": "bunx remotion render src/index.ts Odr out/odr-16x9.mp4 && bunx remotion render src/index.ts OdrPortrait out/odr-9x16.mp4"
+    "render": "bun run render:indian && bun run render:system",
+    "render:indian": "bunx remotion render src/index.ts Odr out/odr-indian-16x9.mp4 && bunx remotion render src/index.ts OdrPortrait out/odr-indian-9x16.mp4",
+    "render:system": "bunx remotion render src/index.ts OdrSystem out/odr-system-16x9.mp4 && bunx remotion render src/index.ts OdrSystemPortrait out/odr-system-9x16.mp4"
   },
   "dependencies": {
     "@remotion/cli": "4.0.290",
