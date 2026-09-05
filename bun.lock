@@ -43,9 +43,18 @@
         "zod": "^3.23.8",
       },
     },
+    "apps/box": {
+      "name": "@odr/box",
+      "dependencies": {
+        "@odr/api": "workspace:*",
+        "@odr/db": "workspace:*",
+      },
+    },
     "apps/captain-pwa": {
       "name": "@odr/captain-pwa",
       "dependencies": {
+        "@fontsource/ibm-plex-mono": "^5.3.0",
+        "@fontsource/ibm-plex-sans": "^5.3.0",
         "@odr/shared": "workspace:*",
         "@odr/tax": "workspace:*",
         "@odr/ui": "workspace:*",
@@ -86,6 +95,7 @@
     "packages/db": {
       "name": "@odr/db",
       "dependencies": {
+        "@electric-sql/pglite": "^0.5.8",
         "drizzle-orm": "^0.45.0",
         "postgres": "^3.4.9",
       },
@@ -185,6 +195,8 @@
 
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],
 
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.8", "", {}, "sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q=="],
+
     "@esbuild-kit/core-utils": ["@esbuild-kit/core-utils@3.3.2", "", { "dependencies": { "esbuild": "~0.18.20", "source-map-support": "^0.5.21" } }, "sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ=="],
 
     "@esbuild-kit/esm-loader": ["@esbuild-kit/esm-loader@2.6.5", "", { "dependencies": { "@esbuild-kit/core-utils": "^3.3.2", "get-tsconfig": "^4.7.0" } }, "sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA=="],
@@ -241,11 +253,17 @@
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.25.12", "", { "os": "win32", "cpu": "x64" }, "sha512-alJC0uCZpTFrSL0CCDjcgleBXPnCrEAhTBILpeAp7M/OFgoqtAetfBzX0xM00MUsVVPpVjlPuMbREqnZCXaTnA=="],
 
+    "@fontsource/ibm-plex-mono": ["@fontsource/ibm-plex-mono@5.3.0", "", {}, "sha512-eTgnZjZEGk1QtD3ZstF+Vclo2HLAni8YMy34/DxllwZvyz1lR/1RF/xTiAquOBO7MvqBx8D2Ig2WCPMVfdZu7Q=="],
+
+    "@fontsource/ibm-plex-sans": ["@fontsource/ibm-plex-sans@5.3.0", "", {}, "sha512-CbE4CbbEEZJX860XyUiRpsksXIQR8Rp2XDva2VO53NJox9tVNtusrysd2x5YkUEY3ErQ66W1IiiQL8/wihhw5w=="],
+
     "@odr/admin": ["@odr/admin@workspace:apps/admin"],
 
     "@odr/api": ["@odr/api@workspace:apps/api"],
 
     "@odr/auth": ["@odr/auth@workspace:packages/auth"],
+
+    "@odr/box": ["@odr/box@workspace:apps/box"],
 
     "@odr/captain-pwa": ["@odr/captain-pwa@workspace:apps/captain-pwa"],
 

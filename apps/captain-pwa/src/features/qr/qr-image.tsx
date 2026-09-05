@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { config } from "../../lib/config.ts";
 
 /*
  * Where the diner's phone lands. Served as runtime config by src/server.ts
@@ -7,14 +8,8 @@ import QRCode from "qrcode";
  * :3003. Printed QR cards outlive a redeploy — get this right before anyone
  * laminates them.
  */
-declare global {
-  interface Window {
-    __ODR?: { dinerOrigin?: string };
-  }
-}
-
 const dinerOrigin = (): string =>
-  window.__ODR?.dinerOrigin || window.location.origin.replace(/:\d+$/, ":3003");
+  config().dinerOrigin || window.location.origin.replace(/:\d+$/, ":3003");
 
 export const tableQrUrl = (outletId: string, label: string, token: string): string =>
   `${dinerOrigin()}/#/o/${outletId}/t/${encodeURIComponent(label)}?k=${token}`;

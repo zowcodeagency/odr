@@ -1,12 +1,14 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { and, eq } from "drizzle-orm";
-import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
+import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema/index.ts";
 import { tenants } from "./schema/tenants.ts";
 import { memberships } from "./schema/users.ts";
 
-export type DB = PostgresJsDatabase<typeof schema>;
+/** Any Drizzle Postgres database over our schema: postgres.js in the cloud, PGlite in the Box. */
+export type DB = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 // Supabase's transaction pooler multiplexes connections per transaction and
 // rejects prepared statements (error 42P05), hence prepare: false everywhere.
@@ -19,6 +21,12 @@ const client = (url: string) => drizzle(postgres(url, { prepare: false, max: 5 }
 // process-wide client is used instead.
 const als = new AsyncLocalStorage<DB>();
 let _db: DB | undefined;
+
+/** An entry point that built its own database (the Box, with PGlite) installs it here. */
+export const setDb = (d: DB): void => {
+  _db = d;
+};
+
 const real = (): DB => {
   const scoped = als.getStore();
   if (scoped) return scoped;
@@ -54,6 +62,13 @@ export const db: DB = new Proxy({} as DB, {
   },
 });
 export * as schema from "./schema/index.ts";
+
+/**
+ * Rows from a raw `db.execute(sql\`…\`)`. postgres.js returns the array itself;
+ * PGlite (the Box) returns `{ rows, fields, … }`. Every raw query reads through here.
+ */
+export const rowsOf = <T>(result: unknown): T[] =>
+  Array.isArray(result) ? (result as T[]) : ((result as { rows?: T[] }).rows ?? []);
 
 /**
  * Subscription end date ('YYYY-MM-DD') for a tenant, or null when unset.

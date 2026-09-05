@@ -19,6 +19,7 @@
     "build:diner": "bun dev/build-web.ts diner",
     "build:admin": "bun dev/build-web.ts admin",
     "build:web": "bun run build:captain && bun run build:diner && bun run build:admin",
+    "build:box": "bun dev/build-box.ts",
     "prepare": "husky",
     "dev:diner": "bun --cwd apps/diner dev"
   },

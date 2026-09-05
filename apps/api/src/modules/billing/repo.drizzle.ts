@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
-import type { DB } from "@odr/db";
+import { rowsOf, type DB } from "@odr/db";
 import { bills, billLines, orders, outlets } from "@odr/db/schema";
 import { ConflictError } from "@odr/shared";
 import type { BillInsert, BillingRepo } from "./ports.ts";
@@ -118,7 +118,7 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
         WHERE ${where}
         GROUP BY 1, 2
         ORDER BY 1, 2
-      `) as unknown as Promise<{ name: string; rate: number; amount_minor: string }[]>,
+      `).then((r) => rowsOf<{ name: string; rate: number; amount_minor: string }>(r)),
     ]);
     const sum = (k: "subtotalMinor" | "taxTotalMinor" | "grandTotalMinor") =>
       channels.reduce((a, r) => a + BigInt(r[k]), 0n);
@@ -163,8 +163,7 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
           WHERE id = ${input.outletId} AND tenant_id = ${input.tenantId}
           FOR UPDATE
         `);
-        // Drizzle's execute returns driver-shaped rows; bun-sql gives us an array.
-        const counterRow = (locked as unknown as { invoice_counter: string }[])[0];
+        const counterRow = rowsOf<{ invoice_counter: string }>(locked)[0];
         if (!counterRow) throw new ConflictError("outlet vanished mid-tx");
 
         // The invoice_counter is naive — global per outlet. Per-fiscal-year

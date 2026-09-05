@@ -11,6 +11,8 @@ coverage
 .env.production
 output
 tmp
+apps/box/dist/
+apps/box/.data/
 
 # Claude Code worktrees
 .claude/worktrees/

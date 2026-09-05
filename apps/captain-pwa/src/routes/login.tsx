@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { Button, Input, ThemeToggle } from "@odr/ui";
 import { api, needsTenant, type Outlet } from "../lib/api.ts";
+import { config } from "../lib/config.ts";
 import { navigate } from "../lib/router.ts";
 import {
   addressLine,
@@ -15,6 +16,7 @@ import {
 } from "../lib/session.ts";
 import { Logo } from "../shell/logo.tsx";
 import { LoginServiceLoop } from "./login-service-loop.tsx";
+import { SetupRoute } from "./setup.tsx";
 
 const FACTS = [
   ["Runs on the phone", "The floor, the kitchen and the bill in one hand."],
@@ -65,6 +67,11 @@ export const LoginRoute = () => {
   const [pending, setPending] = useState<Session | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [setupNeeded, setSetupNeeded] = useState(false);
+  useEffect(() => {
+    if (!config().offline) return;
+    void api.setupStatus().then((s) => setSetupNeeded(s.needed)).catch(() => undefined);
+  }, []);
 
   const enter = (base: Session, list: Outlet[], outlet: Outlet) => {
     rememberOutlet(outlet.id);
@@ -76,11 +83,11 @@ export const LoginRoute = () => {
     navigate({ name: "tables" });
   };
 
-  const signIn = async (tenantId?: string) => {
+  const signIn = async (tenantId?: string, creds?: { email: string; password: string }) => {
     setBusy(true);
     setError(null);
     try {
-      const res = await api.login(email.trim(), password, tenantId);
+      const res = await api.login((creds?.email ?? email).trim(), creds?.password ?? password, tenantId);
       if (needsTenant(res)) {
         setTenants(res.tenants);
         return;
@@ -163,7 +170,16 @@ export const LoginRoute = () => {
           <ThemeToggle />
         </div>
 
-        {tenants ? (
+        {setupNeeded ? (
+          <SetupRoute
+            onDone={(e, p) => {
+              setSetupNeeded(false);
+              setEmail(e);
+              setPassword(p);
+              void signIn(undefined, { email: e, password: p });
+            }}
+          />
+        ) : tenants ? (
           <div className="w-full max-w-[340px] mx-auto my-auto py-10">
             <button
               onClick={() => setTenants(null)}

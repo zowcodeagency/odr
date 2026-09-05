@@ -3,6 +3,7 @@ import { ChevronDown, CloudUpload, HardDrive, Loader2, Printer, QrCode, Trash2, 
 import { Button, ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogTitle, Input } from "@odr/ui";
 import { ApiError, api, errorCode, type Staff, type Table } from "../lib/api.ts";
 import { navigate } from "../lib/router.ts";
+import { config } from "../lib/config.ts";
 import { useAsync, type Async } from "../lib/use-async.ts";
 import { toast } from "../lib/toast.tsx";
 import { parseLabels } from "../features/tables/labels.ts";
@@ -207,7 +208,7 @@ export const SettingsRoute = ({ session }: { session: Session }) => {
       {tab === "tables" ? (
         <>
           <TablesSection session={session} q={tablesQ} />
-          <QrSection session={session} q={tablesQ} />
+          {config().offline ? null : <QrSection session={session} q={tablesQ} />}
         </>
       ) : null}
       {tab === "printing" ? <PrinterSection session={session} /> : null}

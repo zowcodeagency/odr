@@ -4,6 +4,16 @@ import { App } from "./app.tsx";
 import { ErrorBoundary } from "./shell/error-boundary.tsx";
 import { applyBranding, getStoredBranding } from "./lib/branding.ts";
 
+// Bundled: the Box has no internet, and the cloud stops depending on Google Fonts too.
+// Latin subset only — the other subsets (cyrillic, greek, vietnamese, latin-ext)
+// aren't used and were bloating the CSS bundle 82 KB -> 1.1 MB.
+import "@fontsource/ibm-plex-sans/latin-400.css";
+import "@fontsource/ibm-plex-sans/latin-500.css";
+import "@fontsource/ibm-plex-sans/latin-600.css";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "@fontsource/ibm-plex-mono/latin-500.css";
+import "@fontsource/ibm-plex-mono/latin-600.css";
+
 // Owner branding paints on the first frame from the local copy; app.tsx
 // refreshes it from the API once signed in.
 applyBranding(getStoredBranding());
@@ -34,7 +44,7 @@ window.addEventListener("beforeinstallprompt", (e) => {
 // before first paint so nothing downstream has to deal with it arriving late.
 // The production build inlines it into index.html; only dev has to fetch.
 window.__ODR ??= await fetch("/config.json")
-  .then((r) => r.json() as Promise<{ dinerOrigin?: string }>)
+  .then((r) => r.json() as Promise<{ dinerOrigin?: string; offline?: boolean }>)
   .catch(() => ({}));
 
 const el = document.getElementById("root");

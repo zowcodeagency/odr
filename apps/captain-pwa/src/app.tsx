@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "./lib/api.ts";
-import { useRoute } from "./lib/router.ts";
+import { navigate, useRoute } from "./lib/router.ts";
 import { getSession, isExpired, patchSession, SESSION_EVENT, type Session } from "./lib/session.ts";
 import { applyBranding, getStoredBranding, storeBranding } from "./lib/branding.ts";
+import { config } from "./lib/config.ts";
 import { Toaster } from "./lib/toast.tsx";
 import { AppShell } from "./shell/app-shell.tsx";
 import { SubscriptionEnded } from "./shell/subscription.tsx";
@@ -24,6 +25,11 @@ export const App = () => {
   // hash, so there is no second source of truth to keep in sync.
   const [session, setSession] = useState<Session | null>(() => getSession());
   useEffect(() => setSession(getSession()), [route]);
+  // QR sheets need a customer's phone to scan them — pointless offline. Land on the floor
+  // instead of rendering nothing.
+  useEffect(() => {
+    if (route.name === "qr" && config().offline) navigate({ name: "tables" });
+  }, [route]);
   useEffect(() => {
     const on = () => setSession(getSession());
     window.addEventListener(SESSION_EVENT, on);
@@ -93,7 +99,7 @@ export const App = () => {
         {route.name === "settings" ? <SettingsRoute session={session} /> : null}
         {route.name === "menu"     ? <MenuRoute     session={session} /> : null}
         {route.name === "bills"    ? <BillsRoute    session={session} /> : null}
-        {route.name === "qr"       ? <QrSheetRoute  session={session} /> : null}
+        {route.name === "qr" && !config().offline ? <QrSheetRoute session={session} /> : null}
         {route.name === "more"     ? <MoreRoute     session={session} /> : null}
         {route.name === "branding" ? <BrandingRoute session={session} /> : null}
       </AppShell>
