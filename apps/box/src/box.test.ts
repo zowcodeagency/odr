@@ -35,3 +35,23 @@ test("box boots on an empty folder, sets up a restaurant, owner signs in", async
     rmSync(dataDir, { recursive: true, force: true });
   }
 }, 30_000);
+
+test("a failed boot releases the database for the next attempt", async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), "odr-box-"));
+  const first = await startBox({ dataDir, port: 0, assets: {} });
+  try {
+    const firstPort = Number(new URL(first.url).port);
+
+    // Same data folder, port already taken by `first`: Bun.serve must throw.
+    await expect(startBox({ dataDir, port: firstPort, assets: {} })).rejects.toBeDefined();
+
+    await first.stop();
+
+    // If the failed attempt above left the PGlite folder released, a third
+    // start on the same folder succeeds.
+    const third = await startBox({ dataDir, port: 0, assets: {} });
+    await third.stop();
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+}, 30_000);

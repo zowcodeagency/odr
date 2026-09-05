@@ -6,6 +6,16 @@ import { startBox } from "./serve.ts";
 // Data folder the owner can find: ~/Odr (Windows: C:\Users\<name>\Odr). ODR_DATA overrides.
 const dataDir = process.env.ODR_DATA ?? join(homedir(), "Odr");
 const port = Number(process.env.ODR_PORT ?? 3000);
+if (!Number.isInteger(port) || port < 0 || port > 65535) {
+  console.error(`ODR_PORT must be a number between 0 and 65535, got "${process.env.ODR_PORT}"`);
+  process.exit(1);
+}
 
-const box = await startBox({ dataDir, port, assets });
-console.log(`Odr Box · data in ${dataDir} · open ${box.url} on any phone on this wifi`);
+try {
+  const box = await startBox({ dataDir, port, assets });
+  console.log(`Odr Box · data in ${dataDir} · open ${box.url} on any phone on this wifi`);
+} catch (e) {
+  console.error(`Odr Box could not start: ${e instanceof Error ? e.message : String(e)}`);
+  console.error(`Check that the folder ${dataDir} is writable and that port ${port} is free (set ODR_PORT to change it).`);
+  process.exit(1);
+}
