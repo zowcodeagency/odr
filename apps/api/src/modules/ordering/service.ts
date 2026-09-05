@@ -125,6 +125,20 @@ export const makeOrderingService = ({ repo, events, outletActive }: OrderingServ
     return saved;
   },
 
+  /**
+   * The device holds the bill, so the cloud keeps nothing: the settled order,
+   * its lines and its KOTs are removed. Only after the device has saved the bill.
+   */
+  async forget(input: { orderId: string }): Promise<void> {
+    const ctx = getContext();
+    if (!can(ctx.role, "billing:settle")) throw new ForbiddenError("cannot settle");
+    if (!ctx.localBilling) throw new ForbiddenError("local billing is not enabled");
+    const order = await load(ctx.tenantId, input.orderId);
+    if (order.state !== "settled") throw new ConflictError("only a settled order can be forgotten", { state: order.state });
+    await repo.delete(ctx.tenantId, order.id);
+    await emit(events, "order.forgotten", ctx.tenantId, { orderId: order.id, outletId: order.outletId });
+  },
+
   async void(input: { orderId: string }): Promise<Order> {
     const ctx = getContext();
     if (!can(ctx.role, "order:void")) throw new ForbiddenError("cannot void orders");

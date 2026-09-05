@@ -90,6 +90,11 @@ export const buildOrderingRoutes = (svc: OrderingService) => {
     return c.json({ order: serialize(await svc.settle({ orderId: c.req.param("id"), ...body })) });
   });
 
+  r.delete("/orders/:id", async (c) => {
+    await svc.forget({ orderId: c.req.param("id") });
+    return c.body(null, 204);
+  });
+
   r.post("/orders/:id/void", async (c) =>
     c.json({ order: serialize(await svc.void({ orderId: c.req.param("id") })) }));
 

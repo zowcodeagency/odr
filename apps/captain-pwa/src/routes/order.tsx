@@ -166,20 +166,22 @@ export const OrderRoute = ({
       // Two calls, one intent. If the bill leg failed last time the order is
       // already settled, and retrying must reach the bill rather than dying
       // on the FSM. Billing itself is idempotent per order.
+      let settled = order;
       if (order?.state !== "settled") {
-        await api.settleOrder(orderId, keepLocal).catch((e: unknown) => {
+        settled = await api.settleOrder(orderId, keepLocal).catch((e: unknown) => {
           if (errorCode(e) !== "CONFLICT") throw e;
+          return api.order(orderId);
         });
       }
-      const billId = keepLocal ? await settleLocally(customer) : (await api.createBill(orderId, customer)).id;
+      const billId = keepLocal ? await settleLocally(settled!, customer) : (await api.createBill(orderId, customer)).id;
       setAskCustomer(false);
       setKeepLocal(false);
       navigate({ name: "bill", billId });
     });
 
-  // Priced and numbered on the device, saved to IndexedDB. Settings syncs it later.
-  const settleLocally = async (customer?: { customerName?: string; customerPhone?: string }) => {
-    const settled = order?.state === "settled" ? order : await api.order(orderId);
+  // Priced and numbered on the device, saved to IndexedDB. Once it is safe on
+  // the phone the cloud forgets the order — lines and KOTs included.
+  const settleLocally = async (settled: Order, customer?: { customerName?: string; customerPhone?: string }) => {
     const country = session.taxCountry ?? "IN";
     const fiscalYear = fiscalYearFor(new Date(), country);
     const bill = buildLocalBill({
@@ -192,6 +194,8 @@ export const OrderRoute = ({
       ...customer,
     });
     await localBills.put(bill);
+    // ponytail: offline here leaves the order in the cloud; a retry queue can come with full offline.
+    await api.forgetOrder(orderId).catch(() => undefined);
     return bill.id;
   };
 

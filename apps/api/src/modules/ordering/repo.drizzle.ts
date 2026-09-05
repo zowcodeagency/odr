@@ -204,6 +204,11 @@ export const drizzleOrderRepo = (db: DB): OrderRepo => {
       return (row?.n ?? 0) + 1;
     },
 
+    // Lines and KOTs cascade in the schema.
+    async delete(tenantId, id) {
+      await db.delete(orders).where(and(eq(orders.tenantId, tenantId), eq(orders.id, id)));
+    },
+
     listPendingKots: (tenantId, outletId) =>
       loadKotViews(tenantId, and(eq(kots.outletId, outletId), isNull(kots.doneAt))),
 
