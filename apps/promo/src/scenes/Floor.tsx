@@ -46,7 +46,7 @@ export const Floor = ({ durationInFrames }: { durationInFrames: number }) => {
       durationInFrames={durationInFrames}
       kicker="The floor"
       title="Every table, live. One tap opens an order."
-      points={["See what is free, cooking or paid", "Add tables in seconds: T-1 to T-12", "Works on any phone or tablet"]}
+      points={["See what is free, cooking or paid", "Add tables in seconds: T-1 to T-12", "Phone, tablet, or a browser tab on the counter PC"]}
       screen={
         <>
           <TopBar title="Tables" />

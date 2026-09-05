@@ -4,7 +4,8 @@ import { Video } from "./Video.tsx";
 
 const defaultProps = {
   tagline: "Made in Mangaluru, for every restaurant — big or small.",
-  contact: "odr-captain.zowcode.workers.dev",
+  contact: "odr.zowcode.com",
+  email: "sale@zowcode.com",
 };
 
 export const Root = () => (

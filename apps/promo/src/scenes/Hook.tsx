@@ -23,7 +23,7 @@ export const Hook = ({ durationInFrames }: { durationInFrames: number }) => {
         <div style={{ fontSize: portrait ? 200 : 190, fontWeight: 700, letterSpacing: "-0.06em", lineHeight: 1, opacity: word, transform: `translateY(${(1 - word) * 30}px)` }}>odr</div>
       </div>
       <p style={{ margin: "44px 0 0", fontSize: portrait ? 44 : 42, color: C.fg2, textAlign: "center", maxWidth: 1100, lineHeight: 1.25, opacity: line, transform: `translateY(${(1 - line) * 20}px)` }}>
-        The restaurant system that runs on the phone already in your pocket.
+        The restaurant system that runs on the phone already in your pocket — and in a browser tab on the counter.
       </p>
     </AbsoluteFill>
   );
