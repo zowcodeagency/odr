@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ImagePlus, Loader2 } from "lucide-react";
 import { Button } from "@odr/ui";
 import { api } from "../lib/api.ts";
+import { config } from "../lib/config.ts";
 import { toast } from "../lib/toast.tsx";
 import type { Session } from "../lib/session.ts";
 import {
@@ -254,24 +255,26 @@ export const BrandingRoute = ({ session }: { session: Session }) => {
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Font">
-            <span className="relative block">
-              <select
-                value={draft.font}
-                onChange={(e) => patch({ font: e.target.value })}
-                className="appearance-none h-11 w-full pl-3 pr-9 text-[14px] rounded-[var(--radius-2)]
-                           bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
-                           focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-              >
-                {FONTS.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fg-muted)]" />
-            </span>
-          </Field>
+          {config().offline ? null : (
+            <Field label="Font">
+              <span className="relative block">
+                <select
+                  value={draft.font}
+                  onChange={(e) => patch({ font: e.target.value })}
+                  className="appearance-none h-11 w-full pl-3 pr-9 text-[14px] rounded-[var(--radius-2)]
+                             bg-[var(--bg-surface)] ring-1 ring-[var(--line-default)]
+                             focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                >
+                  {FONTS.map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fg-muted)]" />
+              </span>
+            </Field>
+          )}
           <Field label="Theme">
             <div className="flex gap-2">
               {(["light", "dark", "auto"] as const).map((t) => (
