@@ -13,10 +13,17 @@ test("box boots on an empty folder, sets up a restaurant, owner signs in", async
 
     expect(await (await fetch(`${box.url}/setup`)).json()).toEqual({ needed: true });
 
+    const wrongCode = await fetch(`${box.url}/setup`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Box Cafe", ownerEmail: "o@box.test", ownerPassword: "password1", ownerFullName: "Owner", setupCode: "000000" }),
+    });
+    expect(wrongCode.status).toBe(403);
+
     const created = await fetch(`${box.url}/setup`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "Box Cafe", ownerEmail: "o@box.test", ownerPassword: "password1", ownerFullName: "Owner" }),
+      body: JSON.stringify({ name: "Box Cafe", ownerEmail: "o@box.test", ownerPassword: "password1", ownerFullName: "Owner", setupCode: box.setupCode }),
     });
     expect(created.status).toBe(201);
 

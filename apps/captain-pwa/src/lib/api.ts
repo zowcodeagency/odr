@@ -314,7 +314,7 @@ export const api = {
     get<{ needed: boolean }>("/setup").catch((e: unknown) =>
       e instanceof ApiError && e.status === 404 ? { needed: false } : Promise.reject(e),
     ),
-  setup: (input: { name: string; ownerEmail: string; ownerPassword: string; ownerFullName: string; gstin?: string }) =>
+  setup: (input: { name: string; ownerEmail: string; ownerPassword: string; ownerFullName: string; gstin?: string; setupCode: string }) =>
     send<{ tenantId: string; outletId: string }>("POST", "/setup", input),
 
   me: () =>

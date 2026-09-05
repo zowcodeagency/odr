@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button, Input } from "@odr/ui";
-import { api } from "../lib/api.ts";
+import { api, errorCode } from "../lib/api.ts";
 
 /** First run of a Box: create the restaurant and its owner. Tables come later, in Settings. */
 export const SetupRoute = ({ onDone }: { onDone: (email: string, password: string) => void }) => {
-  const [f, setF] = useState({ name: "", gstin: "", ownerFullName: "", ownerEmail: "", ownerPassword: "" });
+  const [f, setF] = useState({ name: "", gstin: "", ownerFullName: "", ownerEmail: "", ownerPassword: "", setupCode: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -20,10 +20,16 @@ export const SetupRoute = ({ onDone }: { onDone: (email: string, password: strin
         ownerFullName: f.ownerFullName.trim(),
         ownerEmail: f.ownerEmail.trim(),
         ownerPassword: f.ownerPassword,
+        setupCode: f.setupCode.trim(),
         ...(f.gstin.trim() ? { gstin: f.gstin.trim().toUpperCase() } : {}),
       });
       onDone(f.ownerEmail.trim(), f.ownerPassword);
     } catch (err) {
+      // The box is already set up (another tab/device won the race): reload lands on login.
+      if (errorCode(err) === "CONFLICT") {
+        window.location.reload();
+        return;
+      }
       setError(err instanceof Error ? err.message : "Setup failed");
     } finally {
       setBusy(false);
@@ -46,6 +52,13 @@ export const SetupRoute = ({ onDone }: { onDone: (email: string, password: strin
       {field("Your name", <Input required value={f.ownerFullName} onChange={set("ownerFullName")} className="h-11" />)}
       {field("Your email", <Input required type="email" value={f.ownerEmail} onChange={set("ownerEmail")} className="h-11" />)}
       {field("Password (8+ characters)", <Input required type="password" minLength={8} value={f.ownerPassword} onChange={set("ownerPassword")} className="h-11" />)}
+      {field(
+        "Setup code",
+        <>
+          <Input required inputMode="numeric" pattern="\d{6}" maxLength={6} value={f.setupCode} onChange={set("setupCode")} className="h-11 font-mono" />
+          <span className="mt-1 block text-[12px] text-[var(--fg-tertiary)]">Shown on the Box's screen when it starts</span>
+        </>,
+      )}
       {error ? <p className="text-[13px] text-[var(--status-voided)]">{error}</p> : null}
       <Button type="submit" size="lg" className="w-full" disabled={busy}>
         {busy ? <Loader2 size={16} className="animate-spin" /> : null} Create and sign in

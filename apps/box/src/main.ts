@@ -15,6 +15,7 @@ let box: Awaited<ReturnType<typeof startBox>> | undefined;
 try {
   box = await startBox({ dataDir, port, assets, migrations });
   console.log(`Odr Box · data in ${dataDir} · open ${box.url} on any phone on this wifi`);
+  console.log(`First-time setup code: ${box.setupCode} (only needed once, on the setup screen)`);
   for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => void box!.stop().then(() => process.exit(0)));
 } catch (e) {
   console.error(`Odr Box could not start: ${e instanceof Error ? e.message : String(e)}`);

@@ -36,12 +36,16 @@ export const startBox = async (opts: { dataDir: string; port: number; assets: Re
     process.env.ODR_MIGRATIONS = dir;
   }
 
+  // Six digits, guards the unauthenticated first-run /setup route until the owner
+  // (reading it off the Box's own console) types it back in — see setup.ts.
+  const setupCode = String(crypto.getRandomValues(new Uint32Array(1))[0]! % 1_000_000).padStart(6, "0");
+
   const pg = await openPglite(join(opts.dataDir, "db"));
   try {
     setDb(pg.db);
 
     const { buildApp } = await import("@odr/api/app");
-    const app = await buildApp({ setup: true });
+    const app = await buildApp({ setupCode });
 
     const config = JSON.stringify({ dinerOrigin: "", offline: true });
     const index = opts.assets["/index.html"];
@@ -56,15 +60,19 @@ export const startBox = async (opts: { dataDir: string; port: number; assets: Re
         }
         if (p === "/config.json") return new Response(config, { headers: { "content-type": "application/json", "cache-control": "no-store" } });
         const file = opts.assets[p];
-        if (file) return new Response(Bun.file(file));
+        if (file) {
+          const headers = /^\/chunk-/.test(p) ? { "cache-control": "public, max-age=31536000, immutable" } : undefined;
+          return new Response(Bun.file(file), { headers });
+        }
         // Hash router: every other path is the app shell.
-        if (index) return new Response(Bun.file(index), { headers: { "content-type": "text/html; charset=utf-8" } });
+        if (index) return new Response(Bun.file(index), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
         return new Response("not found", { status: 404 });
       },
     });
 
     return {
       url: `http://localhost:${server.port}`,
+      setupCode,
       stop: async () => {
         await server.stop(true);
         await pg.close();

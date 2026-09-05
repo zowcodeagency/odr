@@ -15,7 +15,7 @@ import { publicModule } from "./modules/public/module.ts";
 import { printingModule } from "./modules/printing/module.ts";
 import { buildBrandingRoutes } from "./modules/branding/routes.ts";
 
-export const buildApp = async (opts: { setup?: boolean } = {}) => {
+export const buildApp = async (opts: { setupCode?: string } = {}) => {
   const app = new Hono();
   const events = new InMemoryEventBus();
 
@@ -31,7 +31,7 @@ export const buildApp = async (opts: { setup?: boolean } = {}) => {
   const admin = adminModule({ db, menu: menu.service });
   app.route("/admin", admin.routes);
   // Box only: first-run restaurant creation, no auth, closes itself after the first tenant.
-  if (opts.setup) app.route("/", buildSetupRoutes(admin.service, drizzleAdminRepo(db)));
+  if (typeof opts.setupCode === "string") app.route("/", buildSetupRoutes(admin.service, drizzleAdminRepo(db), opts.setupCode));
 
   const outlets = outletsModule({ db, events });
   const ordering = orderingModule({ db, events, outletActive: outlets.service.activeInTenant });
