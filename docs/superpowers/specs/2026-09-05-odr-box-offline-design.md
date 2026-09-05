@@ -75,8 +75,12 @@ local-only route that is disabled once a tenant exists. No admin console on site
 
 ### 4. License
 A license is a compact signed token (Ed25519, `jose` is already a dependency): tenant
-name, license id, expiry date, plan. Public key is baked into the build; the private key
-stays with us in a small CLI (`dev/license.ts`). Entering a key writes `subscription_end`.
+name, license id, expiry date, plan, and the **install id** of the one Box it is for. The
+install id is a random id the Box generates on first run and stores in its data folder; the
+About screen shows it and the owner reads it to us when ordering a key. A key whose install
+id does not match is refused, so one key cannot run two Boxes. Public key is baked into the
+build; the private key stays with us in a small CLI (`dev/license.ts`). Entering a key
+writes `subscription_end`.
 Grace: 3 days after expiry billing still works under a full-width banner, then the
 existing expired screen. Renewal banner in the last 7 days (existing). Keys arrive by
 WhatsApp as text or QR; the Settings page has "Enter license key" and a camera scan.
@@ -127,7 +131,10 @@ Phones open `http://<box-ip>:3000`; we print a card with the address and a QR of
 ### 9. Moving data
 Same schema everywhere, UUID ids, so data moves as rows without renumbering.
 - Box → new Box: "Export backup" on the old machine; the setup page on the new one offers
-  "Restore from backup" before "New restaurant". Same license key.
+  "Restore from backup" before "New restaurant". The new machine has a new install id, so
+  the old key does not work there: the owner calls us, we issue a key for the new id and
+  revoke the old one from our records. Moving is therefore always done with our team, and
+  a copied backup cannot become a second working Box.
 - Cloud → Box: `dev/tenant-export.ts` dumps every row for one tenant id across all tables
   into the same backup format; the Box restores it. Invoice sequences continue.
 - Box → cloud: the reverse import through the admin console (a later, separate step; the
