@@ -10,6 +10,8 @@ test("box boots on an empty folder, sets up a restaurant, owner signs in", async
   try {
     const cfg = await (await fetch(`${box.url}/config.json`)).json();
     expect(cfg).toEqual({ dinerOrigin: "", offline: true });
+    const { urls } = (await (await fetch(`${box.url}/box/phone-urls`)).json()) as { urls: string[] };
+    for (const u of urls) expect(u).toMatch(new RegExp(`^http://\\d+\\.\\d+\\.\\d+\\.\\d+:${new URL(box.url).port}$`));
 
     expect(await (await fetch(`${box.url}/setup`)).json()).toEqual({ needed: true });
 

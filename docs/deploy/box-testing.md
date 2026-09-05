@@ -50,8 +50,10 @@ Whatever the machine, the walk-through is identical once the Box is running.
 7. **Check the offline hiding.** More has no "Print QR sheet" row. Settings has no
    "Table QR codes" section. Branding has no font picker. Typing `#/qr` in the address
    bar lands on Tables.
-8. **From a phone.** Open the "On a phone on this wifi" address printed in the console,
-   for example `http://192.168.1.23:7777`. Never `localhost` — that is the phone itself. Sign in, open a table, fire a KOT. The Kitchen tab on
+8. **From a phone.** On the computer, click **Phone link** at the top right (next to
+   Connected) and scan the QR with the phone's camera. It opens the Box on the phone.
+   The same address is printed in the console as "On a phone on this wifi", for example
+   `http://192.168.1.23:7777`. Never `localhost` — that is the phone itself. Sign in, open a table, fire a KOT. The Kitchen tab on
    the computer shows it within five seconds.
 9. **Restart.** Stop the Box (Ctrl+C in the console, or close the window on Windows)
    and start it again. Sign in. Tables, the order and the bill are all still there, and

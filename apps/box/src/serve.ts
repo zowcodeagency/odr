@@ -1,4 +1,5 @@
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { networkInterfaces } from "node:os";
 import { join } from "node:path";
 import { setDb } from "@odr/db";
 import { openPglite } from "@odr/db/pglite";
@@ -10,6 +11,13 @@ import { openPglite } from "@odr/db/pglite";
  * `migrations` maps a drizzle-folder-relative path to its embedded file path — only
  * the compiled binary passes these (see main.ts); the repo folder is used otherwise.
  */
+/** Every IPv4 address this machine has on the LAN, as the URLs a phone must open. Recomputed per call: wifi changes. */
+export const phoneUrls = (port: number | string): string[] =>
+  Object.values(networkInterfaces())
+    .flat()
+    .filter((a) => a && a.family === "IPv4" && !a.internal)
+    .map((a) => `http://${a!.address}:${port}`);
+
 export const startBox = async (opts: { dataDir: string; port: number; assets: Record<string, string>; migrations?: Record<string, string> }) => {
   mkdirSync(opts.dataDir, { recursive: true });
 
@@ -52,13 +60,15 @@ export const startBox = async (opts: { dataDir: string; port: number; assets: Re
 
     const server = Bun.serve({
       port: opts.port,
-      async fetch(req) {
+      async fetch(req, srv) {
         const url = new URL(req.url);
         const p = url.pathname;
         if (p.startsWith("/api/") || p.startsWith("/auth/") || p.startsWith("/public/") || p === "/health" || p === "/setup") {
           return app.fetch(req);
         }
         if (p === "/config.json") return new Response(config, { headers: { "content-type": "application/json", "cache-control": "no-store" } });
+      // The topbar's "Phone link" QR: which address a phone on this wifi should open.
+      if (p === "/box/phone-urls") return Response.json({ urls: phoneUrls(srv.port ?? opts.port) }, { headers: { "cache-control": "no-store" } });
         const file = opts.assets[p];
         if (file) {
           const headers = /^\/chunk-/.test(p) ? { "cache-control": "public, max-age=31536000, immutable" } : undefined;

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { NetworkPill, ThemeToggle } from "@odr/ui";
 import type { Session } from "../lib/session.ts";
+import { config } from "../lib/config.ts";
 import { BrandMark } from "./logo.tsx";
+import { PhoneLink } from "./phone-link.tsx";
 import { OutletSwitcher } from "./outlet-switcher.tsx";
 
 interface TopbarProps {
@@ -37,6 +39,7 @@ export const Topbar = ({ session }: TopbarProps) => {
 
       <div className="flex-1" />
 
+      {config().offline ? <PhoneLink /> : null}
       <NetworkPill state={online ? "online" : "offline"} />
       <span className="hidden md:inline-flex">
         <ThemeToggle />
