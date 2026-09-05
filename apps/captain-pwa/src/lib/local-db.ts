@@ -50,9 +50,9 @@ export const localBills = {
     return (await done((await tx("readonly")).objectStore(STORE).get(id))) ?? null;
   },
 
-  /** Newest first. `from` is an ISO instant; omit for everything. */
-  async list(outletId: string, from = ""): Promise<LocalBill[]> {
-    const range = IDBKeyRange.bound([outletId, from], [outletId, "￿"]);
+  /** Newest first. `from` / `to` are ISO instants; omit for everything. */
+  async list(outletId: string, from = "", to = "￿"): Promise<LocalBill[]> {
+    const range = IDBKeyRange.bound([outletId, from], [outletId, to]);
     const rows: LocalBill[] = await done((await tx("readonly")).objectStore(STORE).index("outlet_settled").getAll(range));
     return rows.sort((a, b) => b.settledAt.localeCompare(a.settledAt));
   },

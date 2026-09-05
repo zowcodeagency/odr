@@ -8,6 +8,7 @@ import { ThermalTicket } from "../features/print/thermal-ticket.tsx";
 import type { Session } from "../lib/session.ts";
 import { localBills } from "../lib/local-db.ts";
 import { upiPayUrl } from "../features/billing/upi.ts";
+import { CHANNEL_LABEL } from "../features/ordering/channels.ts";
 
 /** Tax strategies return fractions (0.025); the receipt speaks basis points. */
 const toBps = (rate: number) => Math.round(rate * 10000);
@@ -36,14 +37,15 @@ export const BillRoute = ({
     return (
       <div className="p-8">
         <p className="text-[14px] text-[var(--status-voided)]">{q.error ?? "Bill not found"}</p>
-        <Button className="mt-4" onClick={() => navigate({ name: "tables" })}>
-          Back to tables
+        <Button className="mt-4" onClick={() => navigate({ name: "bills" })}>
+          Back to sales
         </Button>
       </div>
     );
 
   const { bill, local } = q.data;
-  const tableLabel = q.data.tableLabel || "—";
+  // Parcels and delivery orders have no table; say where the bill came from instead.
+  const tableLabel = q.data.tableLabel || (bill.channel ? CHANNEL_LABEL[bill.channel] : "—");
   const currency = bill.currency;
   const money = (m: string) => formatMinor(m, currency, { withSymbol: false });
   const upi = session.outletUpiId
@@ -69,7 +71,7 @@ export const BillRoute = ({
     <div className="px-4 py-5 sm:px-6 sm:py-7 lg:px-10 max-w-[1100px] mx-auto" data-print="hide">
       <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <IconButton label="Back" size="sm" onClick={() => navigate({ name: "tables" })}>
+          <IconButton label="Back to sales" size="sm" onClick={() => navigate({ name: "bills" })}>
             <ArrowLeft size={16} />
           </IconButton>
           <div>

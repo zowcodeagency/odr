@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { ValidationError } from "@odr/shared";
 import type { BillingService } from "./service.ts";
-import type { Bill } from "./domain.ts";
+import type { Bill, SalesSummary } from "./domain.ts";
 
 const settleSchema = z.object({
   orderId: z.string().uuid(),
@@ -32,8 +32,23 @@ const parse = <S extends z.ZodTypeAny>(s: S, body: unknown): z.infer<S> => {
 
 const serializeSummary = (b: {
   id: string; outletId: string; orderId: string; invoiceNumber: string; currency: string;
-  grandTotalMinor: bigint; customerName: string | null; customerPhone: string | null; settledAt: string;
+  grandTotalMinor: bigint; customerName: string | null; customerPhone: string | null; channel: string; settledAt: string;
 }) => ({ ...b, grandTotalMinor: b.grandTotalMinor.toString() });
+
+const serializeSales = (s: SalesSummary) => ({
+  count: s.count,
+  subtotalMinor: s.subtotalMinor.toString(),
+  taxTotalMinor: s.taxTotalMinor.toString(),
+  grandTotalMinor: s.grandTotalMinor.toString(),
+  byChannel: s.byChannel.map((c) => ({ ...c, grandTotalMinor: c.grandTotalMinor.toString() })),
+  taxBreakdown: s.taxBreakdown.map((t) => ({ ...t, amountMinor: t.amountMinor.toString() })),
+});
+
+const rangeQuery = (q: (k: string) => string | undefined) => ({
+  ...(q("outletId") ? { outletId: q("outletId")! } : {}),
+  ...(q("from") ? { from: q("from")! } : {}),
+  ...(q("to") ? { to: q("to")! } : {}),
+});
 
 const serialize = (b: Bill) => ({
   ...b,
@@ -63,14 +78,16 @@ export const buildBillingRoutes = (svc: BillingService) => {
     return c.json({ bill: serialize(bill) }, 201);
   });
 
-  // Must be registered before /bills/:id or "bills" would match the param.
+  // Must be registered before /bills/:id or "bills" / "summary" would match the param.
   r.get("/bills", async (c) => {
-    const bills = await svc.list({
-      ...(c.req.query("outletId") ? { outletId: c.req.query("outletId")! } : {}),
-      ...(c.req.query("from") ? { from: c.req.query("from")! } : {}),
-      ...(c.req.query("to") ? { to: c.req.query("to")! } : {}),
-    });
+    const limit = Number(c.req.query("limit"));
+    const bills = await svc.list({ ...rangeQuery((k) => c.req.query(k)), ...(limit > 0 ? { limit } : {}) });
     return c.json({ bills: bills.map(serializeSummary) });
+  });
+
+  r.get("/bills/summary", async (c) => {
+    const summary = await svc.summary(rangeQuery((k) => c.req.query(k)));
+    return c.json({ summary: serializeSales(summary) });
   });
 
   r.get("/bills/:id", async (c) => {

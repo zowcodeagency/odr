@@ -13,6 +13,7 @@ export type SettleableOrder = {
   id: string;
   outletId: string;
   state: string;
+  channel: string;
   lines: Array<{
     itemId: string;
     itemName: string;
@@ -111,8 +112,17 @@ export const makeBillingService = ({ repo, events, country, orders, isInterstate
       lines: billLines,
       customerName: input.customerName ?? null,
       customerPhone: input.customerPhone ?? null,
+      channel: order.channel,
       prefix: meta.prefix,
     };
+  };
+
+  const readScope = (outletId?: string) => {
+    const ctx = getContext();
+    if (!can(ctx.role, "billing:read")) throw new ForbiddenError("cannot read bills");
+    if (outletId) assertOutletScope(outletId);
+    else if (ctx.outletId) throw new ForbiddenError("outlet out of scope");
+    return ctx;
   };
 
   return {
@@ -206,12 +216,13 @@ export const makeBillingService = ({ repo, events, country, orders, isInterstate
 
   /** One outlet, or every outlet the caller may see (unpinned roles only). */
   async list(opts: { outletId?: string; from?: string; to?: string; limit?: number }) {
-    const ctx = getContext();
-    if (!can(ctx.role, "billing:read")) throw new ForbiddenError("cannot read bills");
-    if (opts.outletId) assertOutletScope(opts.outletId);
-    else if (ctx.outletId) throw new ForbiddenError("outlet out of scope");
-    // ponytail: capped list, no cursor. Add paging when a shift exceeds 500 bills.
+    const ctx = readScope(opts.outletId);
+    // ponytail: capped list, no cursor. Totals come from summary(), so the cap only trims the list.
     return repo.list(ctx.tenantId, { ...opts, limit: Math.min(opts.limit ?? 200, 500) });
+  },
+
+  async summary(opts: { outletId?: string; from?: string; to?: string }) {
+    return repo.summary(readScope(opts.outletId).tenantId, opts);
   },
   };
 };

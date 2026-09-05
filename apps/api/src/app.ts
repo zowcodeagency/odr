@@ -59,6 +59,7 @@ export const buildApp = async () => {
           id: o.id,
           outletId: o.outletId,
           state: o.state,
+          channel: o.channel,
           lines: o.lines.map((l) => ({
             itemId: l.itemId,
             itemName: l.itemName,
