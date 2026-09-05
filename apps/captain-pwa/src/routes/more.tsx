@@ -3,6 +3,7 @@ import { ChevronRight, LogOut, Palette, QrCode, Settings, SunMoon } from "lucide
 import { ThemeToggle } from "@odr/ui";
 import { navigate } from "../lib/router.ts";
 import { canManage, clearSession, type Session } from "../lib/session.ts";
+import { config } from "../lib/config.ts";
 
 const Row = ({
   Icon,
@@ -86,7 +87,7 @@ export const MoreRoute = ({ session }: { session: Session }) => {
           onClick={() => navigate({ name: "branding" })}
         />
       ) : null}
-      {manage ? (
+      {manage && !config().offline ? (
         <Row
           Icon={QrCode}
           title="Print QR sheet"

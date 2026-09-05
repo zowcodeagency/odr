@@ -3,6 +3,7 @@ import { api } from "./lib/api.ts";
 import { useRoute } from "./lib/router.ts";
 import { getSession, isExpired, patchSession, SESSION_EVENT, type Session } from "./lib/session.ts";
 import { applyBranding, getStoredBranding, storeBranding } from "./lib/branding.ts";
+import { config } from "./lib/config.ts";
 import { Toaster } from "./lib/toast.tsx";
 import { AppShell } from "./shell/app-shell.tsx";
 import { SubscriptionEnded } from "./shell/subscription.tsx";
@@ -93,7 +94,7 @@ export const App = () => {
         {route.name === "settings" ? <SettingsRoute session={session} /> : null}
         {route.name === "menu"     ? <MenuRoute     session={session} /> : null}
         {route.name === "bills"    ? <BillsRoute    session={session} /> : null}
-        {route.name === "qr"       ? <QrSheetRoute  session={session} /> : null}
+        {route.name === "qr" && !config().offline ? <QrSheetRoute session={session} /> : null}
         {route.name === "more"     ? <MoreRoute     session={session} /> : null}
         {route.name === "branding" ? <BrandingRoute session={session} /> : null}
       </AppShell>
