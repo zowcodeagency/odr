@@ -2,6 +2,8 @@ import { test, expect } from "bun:test";
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { sql } from "drizzle-orm";
+import { rowsOf } from "./index.ts";
 import { openPglite } from "./pglite.ts";
 import { tenants } from "./schema/index.ts";
 
@@ -10,6 +12,8 @@ test("openPglite migrates an empty folder and persists across reopen", async () 
   try {
     const first = await openPglite(dir);
     await first.db.insert(tenants).values({ slug: "t1", name: "T1", country: "IN", currency: "INR" });
+    // Raw SQL comes back as { rows } under PGlite (an array under postgres.js); rowsOf hides that.
+    expect(rowsOf(await first.db.execute(sql`select 1 as x`))).toEqual([{ x: 1 }]);
     await first.close();
 
     // Second open: migrations are a no-op, data is still there.

@@ -64,6 +64,13 @@ export const db: DB = new Proxy({} as DB, {
 export * as schema from "./schema/index.ts";
 
 /**
+ * Rows from a raw `db.execute(sql\`…\`)`. postgres.js returns the array itself;
+ * PGlite (the Box) returns `{ rows, fields, … }`. Every raw query reads through here.
+ */
+export const rowsOf = <T>(result: unknown): T[] =>
+  Array.isArray(result) ? (result as T[]) : ((result as { rows?: T[] }).rows ?? []);
+
+/**
  * Subscription end date ('YYYY-MM-DD') for a tenant, or null when unset.
  * Lives here so both the auth middleware and the identity repo share one query.
  * ponytail: one extra SELECT per authenticated request — cache it if it shows up in latency.
