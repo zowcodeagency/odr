@@ -38,8 +38,11 @@ const fakeRepo = (initialCounter = 0) => {
       return bills.filter((b) => !outletId || b.outletId === outletId).map((b) => ({
         id: b.id, outletId: b.outletId, orderId: b.orderId, invoiceNumber: b.invoiceNumber, currency: b.currency,
         grandTotalMinor: b.grandTotalMinor, customerName: b.customerName,
-        customerPhone: b.customerPhone, settledAt: b.settledAt,
+        customerPhone: b.customerPhone, channel: b.channel, settledAt: b.settledAt,
       }));
+    },
+    async summary() {
+      throw new Error("not used in tests");
     },
     async reserveAndCreate(input, prefix) {
       counter += 1;
@@ -56,6 +59,7 @@ const fakeRepo = (initialCounter = 0) => {
         taxTotalMinor: input.taxTotalMinor,
         grandTotalMinor: input.grandTotalMinor,
         taxBreakdown: input.taxBreakdown,
+        channel: input.channel,
         settledAt: input.settledAt ?? new Date().toISOString(),
         lines: input.lines.map((l, i) => ({ ...l, id: `bl-${i}` })),
       };
@@ -70,6 +74,7 @@ const sampleOrder = (id: string, lines: SettleableOrder["lines"]): SettleableOrd
   id,
   outletId: OUTLET,
   state: "settled",
+  channel: "parcel",
   lines,
 });
 
@@ -91,6 +96,7 @@ test("settle creates bill with GST_5 split into CGST + SGST and grand total = su
     expect(bill.subtotalMinor).toBe(24000n); // 2 × 120.00 = 240.00
     expect(bill.taxTotalMinor).toBe(1200n);  // 5% of 240.00 = 12.00
     expect(bill.grandTotalMinor).toBe(25200n); // 252.00
+    expect(bill.channel).toBe("parcel"); // snapshotted from the order — device billing deletes the order later
     expect(bill.taxBreakdown.map((c) => c.name).sort()).toEqual(["CGST", "SGST"]);
     expect(bills).toHaveLength(1);
   });

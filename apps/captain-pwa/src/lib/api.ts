@@ -211,6 +211,8 @@ export interface Bill {
   taxBreakdown: { name: string; rate: number; amountMinor: string }[];
   customerName: string | null;
   customerPhone: string | null;
+  /** Copied from the order at settle; missing on bills from older API builds. */
+  channel?: Channel;
   settledAt: string;
   /** Present on newer API builds and device bills; older bills fetch the order for it. */
   tableLabel?: string | null;
@@ -231,7 +233,18 @@ export interface BillSummary {
   grandTotalMinor: string;
   customerName: string | null;
   customerPhone: string | null;
+  channel?: Channel;
   settledAt: string;
+}
+
+/** Range totals from GET /billing/bills/summary — every bill, not just the listed ones. */
+export interface SalesSummary {
+  count: number;
+  subtotalMinor: string;
+  taxTotalMinor: string;
+  grandTotalMinor: string;
+  byChannel: { channel: string; count: number; grandTotalMinor: string }[];
+  taxBreakdown: { name: string; rate: number; amountMinor: string }[];
 }
 
 export interface Staff {
@@ -280,6 +293,13 @@ const toOpenOrder = (raw: Partial<OpenOrder> & Partial<Order>): OpenOrder => ({
   lineCount: raw.lineCount ?? raw.lines?.length ?? 0,
   createdAt: raw.createdAt ?? raw.openedAt ?? new Date().toISOString(),
 });
+
+const rangeQuery = (outletId: string | null, from?: string, to?: string) =>
+  [
+    outletId ? `outletId=${outletId}` : "",
+    from ? `from=${encodeURIComponent(from)}` : "",
+    to ? `to=${encodeURIComponent(to)}` : "",
+  ].filter(Boolean).join("&");
 
 /* ----------------------------------------------------------- endpoints -- */
 
@@ -423,16 +443,11 @@ export const api = {
 
   createBill: (orderId: string, customer?: { customerName?: string; customerPhone?: string }) =>
     send<{ bill: Bill }>("POST", "/api/v1/billing/bills", { orderId, ...customer }).then((r) => r.bill),
-  /** null outlet = every outlet the login may see (owner / manager). */
+  /** null outlet = every outlet the login may see (owner / manager). Newest first, at most 500. */
   bills: (outletId: string | null, from?: string, to?: string) =>
-    get<{ bills: BillSummary[] }>(
-      `/api/v1/billing/bills?` +
-        [
-          outletId ? `outletId=${outletId}` : "",
-          from ? `from=${encodeURIComponent(from)}` : "",
-          to ? `to=${encodeURIComponent(to)}` : "",
-        ].filter(Boolean).join("&"),
-    ).then((r) => r.bills),
+    get<{ bills: BillSummary[] }>(`/api/v1/billing/bills?${rangeQuery(outletId, from, to)}&limit=500`).then((r) => r.bills),
+  billsSummary: (outletId: string | null, from?: string, to?: string) =>
+    get<{ summary: SalesSummary }>(`/api/v1/billing/bills/summary?${rangeQuery(outletId, from, to)}`).then((r) => r.summary),
   bill: (id: string) => get<{ bill: Bill }>(`/api/v1/billing/bills/${id}`).then((r) => r.bill),
 
   printKot: (id: string) => send<null>("POST", `/api/v1/print/kots/${id}`),

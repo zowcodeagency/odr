@@ -51,6 +51,7 @@ export const buildLocalBill = (input: {
       .sort((a, b) => a.name.localeCompare(b.name) || a.rate - b.rate),
     customerName: input.customerName ?? null,
     customerPhone: input.customerPhone ?? null,
+    channel: input.order.channel ?? "dine_in",
     settledAt: input.settledAt,
     tableLabel: input.order.tableLabel ?? null,
     lines,

@@ -20,6 +20,9 @@ export const bills = pgTable(
     // through the order so the invoice stays a self-contained record.
     customerName: text("customer_name"),
     customerPhone: text("customer_phone"),
+    // Snapshot of the order's channel: device billing deletes the order, and
+    // the sales report needs dine-in vs parcel vs Zomato without it.
+    channel: text("channel").notNull().default("dine_in"),
     settledAt: timestamp("settled_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

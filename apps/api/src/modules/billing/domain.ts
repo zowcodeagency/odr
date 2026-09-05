@@ -30,6 +30,8 @@ export type Bill = {
   taxBreakdown: TaxComponentSnapshot[];
   customerName: string | null;
   customerPhone: string | null;
+  /** dine_in | parcel | zomato | swiggy | other | qr — copied from the order at settle. */
+  channel: string;
   settledAt: string;
   lines: BillLine[];
   /** From the order it settled — saves the bill screen a second round trip. */
@@ -46,7 +48,18 @@ export type BillSummary = {
   grandTotalMinor: bigint;
   customerName: string | null;
   customerPhone: string | null;
+  channel: string;
   settledAt: string;
+};
+
+/** Totals for a date range, computed in the database — the list is capped, this is not. */
+export type SalesSummary = {
+  count: number;
+  subtotalMinor: bigint;
+  taxTotalMinor: bigint;
+  grandTotalMinor: bigint;
+  byChannel: Array<{ channel: string; count: number; grandTotalMinor: bigint }>;
+  taxBreakdown: Array<{ name: string; rate: number; amountMinor: bigint }>;
 };
 
 export { fiscalYearFor } from "@odr/tax";

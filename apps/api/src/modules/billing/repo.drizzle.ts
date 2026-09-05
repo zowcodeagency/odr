@@ -3,7 +3,7 @@ import type { DB } from "@odr/db";
 import { bills, billLines, orders, outlets } from "@odr/db/schema";
 import { ConflictError } from "@odr/shared";
 import type { BillInsert, BillingRepo } from "./ports.ts";
-import { formatInvoiceNumber, type Bill, type BillLine, type BillSummary } from "./domain.ts";
+import { formatInvoiceNumber, type Bill, type BillLine, type BillSummary, type SalesSummary } from "./domain.ts";
 
 const toDomain = (b: typeof bills.$inferSelect, lines: BillLine[], tableLabel?: string | null): Bill => ({
   ...(tableLabel !== undefined ? { tableLabel } : {}),
@@ -19,6 +19,7 @@ const toDomain = (b: typeof bills.$inferSelect, lines: BillLine[], tableLabel?: 
   taxBreakdown: b.taxBreakdown,
   customerName: b.customerName,
   customerPhone: b.customerPhone,
+  channel: b.channel,
   settledAt: b.settledAt.toISOString(),
   lines,
 });
@@ -33,6 +34,15 @@ const lineToDomain = (l: typeof billLines.$inferSelect): BillLine => ({
   lineSubtotalMinor: BigInt(l.lineSubtotalMinor),
   lineTaxMinor: BigInt(l.lineTaxMinor),
 });
+
+/** The list and the summary must agree on which bills they cover. */
+const inRange = (tenantId: string, { outletId, from, to }: { outletId?: string; from?: string; to?: string }) =>
+  and(
+    eq(bills.tenantId, tenantId),
+    ...(outletId ? [eq(bills.outletId, outletId)] : []),
+    ...(from ? [gte(bills.settledAt, new Date(from))] : []),
+    ...(to ? [lte(bills.settledAt, new Date(to))] : []),
+  );
 
 export const drizzleBillingRepo = (db: DB): BillingRepo => ({
   async outletPrefixAndCurrency(tenantId, outletId) {
@@ -62,10 +72,6 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
   },
 
   async list(tenantId, { outletId, from, to, limit }) {
-    const clauses = [eq(bills.tenantId, tenantId)];
-    if (outletId) clauses.push(eq(bills.outletId, outletId));
-    if (from) clauses.push(gte(bills.settledAt, new Date(from)));
-    if (to) clauses.push(lte(bills.settledAt, new Date(to)));
     const rows = await db
       .select({
         id: bills.id,
@@ -76,10 +82,11 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
         grandTotalMinor: bills.grandTotalMinor,
         customerName: bills.customerName,
         customerPhone: bills.customerPhone,
+        channel: bills.channel,
         settledAt: bills.settledAt,
       })
       .from(bills)
-      .where(and(...clauses))
+      .where(inRange(tenantId, { outletId, from, to }))
       .orderBy(desc(bills.settledAt))
       .limit(limit);
     return rows.map((r) => ({
@@ -88,6 +95,43 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
       grandTotalMinor: BigInt(r.grandTotalMinor),
       settledAt: r.settledAt.toISOString(),
     }));
+  },
+
+  async summary(tenantId, opts) {
+    const where = inRange(tenantId, opts);
+    const [channels, taxRows] = await Promise.all([
+      db
+        .select({
+          channel: bills.channel,
+          count: sql<number>`count(*)::int`,
+          subtotalMinor: sql<string>`coalesce(sum(${bills.subtotalMinor}), 0)::text`,
+          taxTotalMinor: sql<string>`coalesce(sum(${bills.taxTotalMinor}), 0)::text`,
+          grandTotalMinor: sql<string>`coalesce(sum(${bills.grandTotalMinor}), 0)::text`,
+        })
+        .from(bills)
+        .where(where)
+        .groupBy(bills.channel),
+      // One row per (component, rate) across the range — the same buckets each invoice prints.
+      db.execute(sql`
+        SELECT c->>'name' AS name, (c->>'rate')::float8 AS rate, sum((c->>'amountMinor')::numeric)::text AS amount_minor
+        FROM ${bills}, jsonb_array_elements(${bills.taxBreakdown}) AS c
+        WHERE ${where}
+        GROUP BY 1, 2
+        ORDER BY 1, 2
+      `) as unknown as Promise<{ name: string; rate: number; amount_minor: string }[]>,
+    ]);
+    const sum = (k: "subtotalMinor" | "taxTotalMinor" | "grandTotalMinor") =>
+      channels.reduce((a, r) => a + BigInt(r[k]), 0n);
+    return {
+      count: channels.reduce((a, r) => a + r.count, 0),
+      subtotalMinor: sum("subtotalMinor"),
+      taxTotalMinor: sum("taxTotalMinor"),
+      grandTotalMinor: sum("grandTotalMinor"),
+      byChannel: channels
+        .map((r) => ({ channel: r.channel, count: r.count, grandTotalMinor: BigInt(r.grandTotalMinor) }))
+        .sort((a, b) => (a.grandTotalMinor < b.grandTotalMinor ? 1 : -1)),
+      taxBreakdown: [...taxRows].map((t) => ({ name: t.name, rate: Number(t.rate), amountMinor: BigInt(t.amount_minor) })),
+    } satisfies SalesSummary;
   },
 
   async byOrderId(tenantId, orderId) {
@@ -152,6 +196,7 @@ export const drizzleBillingRepo = (db: DB): BillingRepo => ({
           taxBreakdown: input.taxBreakdown,
           customerName: input.customerName ?? null,
           customerPhone: input.customerPhone ?? null,
+          channel: input.channel,
           ...(input.settledAt ? { settledAt: new Date(input.settledAt) } : {}),
         })
         .returning();
