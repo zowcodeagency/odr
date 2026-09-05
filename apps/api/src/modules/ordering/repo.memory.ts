@@ -36,6 +36,9 @@ export const inMemoryOrderRepo = (): OrderRepo => {
       store.set(key(order.tenantId, order.id), order);
       return order;
     },
+    async delete(tenantId, id) {
+      store.delete(key(tenantId, id));
+    },
     async listOpen(tenantId, outletId) {
       return mine(tenantId).filter((o) => o.outletId === outletId && isOpenState(o.state));
     },

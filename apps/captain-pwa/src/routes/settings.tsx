@@ -381,44 +381,11 @@ const QrSection = ({ session, q }: { session: Session; q: Async<Table[]> }) => {
 
 /* ---------------------------------------------------------------- device -- */
 
-/** Bills kept on this device by holding "Settle & bill": how much, sync, or wipe. */
+/** Bills kept on this device by holding "Settle & bill": how many, and wipe. */
 const DeviceSection = () => {
   const q = useAsync(() => localBills.all(), []);
-  const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const bills = q.data ?? [];
-  const pending = bills.filter((b) => !b.syncedAt);
-  const failed = pending.filter((b) => b.syncError);
-
-  const sync = async () => {
-    setBusy(true);
-    let ok = 0;
-    try {
-      for (const [i, b] of pending.entries()) {
-        setProgress(`Sending ${i + 1} of ${pending.length}…`);
-        const next: LocalBill = { ...b };
-        delete next.syncError;
-        try {
-          await api.importBill(b);
-          next.syncedAt = new Date().toISOString();
-          ok++;
-        } catch (e) {
-          next.syncError = e instanceof Error ? e.message : "Sync failed";
-        }
-        await localBills.put(next);
-      }
-      toast(ok === pending.length ? `${ok} bill${ok === 1 ? "" : "s"} now in the cloud` : `${ok} synced, ${pending.length - ok} failed — see below`);
-    } finally {
-      setBusy(false);
-      setProgress("");
-      q.reload();
-    }
-  };
-
-  const clearWarn = pending.length
-    ? `${pending.length} bill${pending.length === 1 ? " has" : "s have"} never been sent to the cloud and will be lost for good. Clear anyway?`
-    : `Remove ${bills.length} bill${bills.length === 1 ? "" : "s"} from this device? They stay in the cloud.`;
 
   const clear = async () => {
     setConfirmClear(false);
@@ -428,11 +395,10 @@ const DeviceSection = () => {
   };
 
   return (
-    <Section title="Bills on this device" hint="Hold Settle & bill for five seconds and the invoice is saved here instead of the cloud.">
-      <div className="grid grid-cols-3 gap-px bg-[var(--line-default)] rounded-[var(--radius-2)] ring-1 ring-[var(--line-default)] overflow-hidden">
+    <Section title="Bills on this device" hint="Hold Settle & bill for five seconds: the bill is made here and the cloud forgets the order. These bills exist only on this phone.">
+      <div className="grid grid-cols-2 gap-px bg-[var(--line-default)] rounded-[var(--radius-2)] ring-1 ring-[var(--line-default)] overflow-hidden">
         {[
           ["Bills", String(bills.length)],
-          ["Not in cloud", String(pending.length)],
           ["Space used", formatBytes(bytesOf(bills))],
         ].map(([k, v]) => (
           <div key={k} className="bg-[var(--bg-surface)] p-4">
@@ -442,38 +408,19 @@ const DeviceSection = () => {
         ))}
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Button size="lg" onClick={() => void sync()} disabled={busy || pending.length === 0}>
-          {busy ? <Loader2 size={16} className="animate-spin" /> : <CloudUpload size={16} />}
-          {progress || `Sync ${pending.length || ""} to cloud`}
-        </Button>
-        <Button size="lg" variant="outline" className="text-[var(--status-voided)]" onClick={() => setConfirmClear(true)} disabled={busy || bills.length === 0}>
+      <div className="mt-5">
+        <Button size="lg" variant="outline" className="text-[var(--status-voided)]" onClick={() => setConfirmClear(true)} disabled={bills.length === 0}>
           <Trash2 size={16} /> Clear this device
         </Button>
       </div>
       <ConfirmDialog
         open={confirmClear}
         title="Clear this device?"
-        description={clearWarn}
+        description={`Remove ${bills.length} bill${bills.length === 1 ? "" : "s"} from this phone? They are not in the cloud and will be gone for good.`}
         confirmLabel="Clear"
         onConfirm={() => void clear()}
         onOpenChange={setConfirmClear}
       />
-
-      {failed.length > 0 ? (
-        <ul className="mt-4 text-[13px] space-y-1">
-          {failed.map((b) => (
-            <li key={b.id} className="flex items-start gap-2 text-[var(--status-voided)]">
-              <HardDrive size={14} className="mt-0.5 shrink-0" />
-              <span><span className="font-mono">{b.invoiceNumber}</span> — {b.syncError}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <p className="mt-4 text-[12px] text-[var(--fg-muted)]">
-        Bills here open instantly and never leave this phone until you sync. Syncing sends only the invoice number,
-        time, total and customer details; the cloud re-prices the same order and keeps your number.
-      </p>
     </Section>
   );
 };

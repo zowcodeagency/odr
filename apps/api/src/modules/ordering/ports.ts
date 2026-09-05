@@ -23,4 +23,6 @@ export interface OrderRepo {
   kotById(tenantId: string, kotId: string): Promise<KotView | null>;
   /** Idempotent bump — returns null when the kot doesn't exist. */
   markKotDone(tenantId: string, kotId: string): Promise<KotView | null>;
+  /** Removes the order with its lines and KOTs. Used when the device keeps the bill. */
+  delete(tenantId: string, id: string): Promise<void>;
 }

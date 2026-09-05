@@ -159,3 +159,25 @@ test("a captain pinned elsewhere cannot touch an order by id", async () => {
     await expect(svc.byId(o.id)).rejects.toThrow(/out of scope/);
   });
 });
+
+test("a locally billed order can be forgotten, and only once settled", async () => {
+  const repo = inMemoryOrderRepo();
+  const svc = makeOrderingService({ repo, events: new InMemoryEventBus() });
+  await runWithContext({ ...ctx, localBilling: true }, async () => {
+    const o = await svc.openTable({ outletId: asOutletId(ctx.outletId), tableLabel: "T-7" });
+    await svc.addItems({ orderId: o.id, lines: [sampleLine] });
+    await svc.fireKot({ orderId: o.id });
+    await expect(svc.forget({ orderId: o.id })).rejects.toThrow(/settled/);
+    await svc.settle({ orderId: o.id, localBill: true });
+    await svc.forget({ orderId: o.id });
+    expect(await svc.byId(o.id)).toBeNull();
+  });
+  // Without the tenant flag the cloud never deletes.
+  await runWithContext(ctx, async () => {
+    const o = await svc.openTable({ outletId: asOutletId(ctx.outletId), tableLabel: "T-8" });
+    await svc.addItems({ orderId: o.id, lines: [sampleLine] });
+    await svc.fireKot({ orderId: o.id });
+    await svc.settle({ orderId: o.id });
+    await expect(svc.forget({ orderId: o.id })).rejects.toThrow(/not enabled/);
+  });
+});

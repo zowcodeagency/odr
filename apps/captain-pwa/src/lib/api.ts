@@ -410,6 +410,8 @@ export const api = {
   /** `localBill` tells the cloud this device keeps the invoice — no auto-bill. */
   settleOrder: (id: string, localBill = false) =>
     send<{ order: Order }>("POST", `/api/v1/ordering/orders/${id}/settle`, localBill ? { localBill } : undefined).then((r) => r.order),
+  /** Cloud deletes the settled order with its lines and KOTs — the device holds the bill. */
+  forgetOrder: (id: string) => send<null>("DELETE", `/api/v1/ordering/orders/${id}`),
   voidOrder: (id: string) =>
     send<{ order: Order }>("POST", `/api/v1/ordering/orders/${id}/void`).then((r) => r.order),
 
@@ -432,18 +434,6 @@ export const api = {
         ].filter(Boolean).join("&"),
     ).then((r) => r.bills),
   bill: (id: string) => get<{ bill: Bill }>(`/api/v1/billing/bills/${id}`).then((r) => r.bill),
-  /** Push a device-kept bill to the cloud; the API re-prices the order and keeps our number. */
-  importBill: (b: Bill) =>
-    send<{ bill: Bill }>("POST", "/api/v1/billing/bills/import", {
-      id: b.id,
-      orderId: b.orderId,
-      invoiceNumber: b.invoiceNumber,
-      fiscalYear: b.fiscalYear,
-      settledAt: b.settledAt,
-      grandTotalMinor: b.grandTotalMinor,
-      ...(b.customerName ? { customerName: b.customerName } : {}),
-      ...(b.customerPhone ? { customerPhone: b.customerPhone } : {}),
-    }).then((r) => r.bill),
 
   printKot: (id: string) => send<null>("POST", `/api/v1/print/kots/${id}`),
   printBill: (id: string) => send<null>("POST", `/api/v1/print/bills/${id}`),
