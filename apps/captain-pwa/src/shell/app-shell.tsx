@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useRoute } from "../lib/router.ts";
 import { canManage, canSeeSales, daysRemaining, type Session } from "../lib/session.ts";
 import { BottomNav } from "./bottom-nav.tsx";
@@ -14,10 +14,6 @@ export const AppShell = ({
   children: ReactNode;
 }) => {
   const route = useRoute();
-  const main = useRef<HTMLElement>(null);
-  // Each screen starts at the top. Without this iOS Safari kept the previous
-  // screen's scroll offset, painting a shorter screen (More, Settings) blank.
-  useEffect(() => main.current?.scrollTo(0, 0), [route]);
   const days = daysRemaining(session.subscriptionEndsAt);
   const warn = session.subscriptionEndsAt !== null && days !== null && days <= 7;
 
@@ -29,7 +25,10 @@ export const AppShell = ({
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar session={session} />
         {warn ? <SubscriptionBanner endsAt={session.subscriptionEndsAt as string} /> : null}
-        <main ref={main} className="flex-1 min-h-0 overflow-auto">{children}</main>
+        {/* Keyed per screen: a fresh scroll container each time. iOS Safari kept the
+            previous screen's scroll offset in the compositor (scrollTop read 0, and
+            scrollTo(0,0) was a no-op), painting a shorter screen like More blank. */}
+        <main key={route.name} className="flex-1 min-h-0 overflow-auto">{children}</main>
         <BottomNav role={session.role} />
       </div>
     </div>
